@@ -154,7 +154,7 @@
       "titre": "Afrique du Sud : double fusillade au Cap et à Johannesburg, 27 morts",
       "contenu": "Huit hommes armés ont tué 17 personnes dans un bar de l'ouest de Johannesburg, puis dix autres ont été tuées dans un établissement nocturne du Cap, dans la nuit du 26 au 27 septembre. La police a lancé des chasses à l'homme avec des unités spéciales. Recoupé : RFI, France 24, franceinfo, TF1.",
       "dateInfo": "2026-09-27T10:00",
-      "cotationInfo": "1",
+      "cotationInfo": "2",
       "sourceId": "s12",
       "veilleId": "v3",
       "entitesIds": [],
@@ -162,11 +162,11 @@
       "informations": [
         {
           "texte": "27 morts au total : 17 à Johannesburg (bar, West Rand) et 10 au Cap (township).",
-          "cotation": "1"
+          "cotation": "2"
         },
         {
           "texte": "La violence armée et les rivalités entre gangs demeurent un fléau national en Afrique du Sud.",
-          "cotation": "1"
+          "cotation": "2"
         }
       ]
     },
@@ -175,7 +175,7 @@
       "titre": "RDC : crash d'un avion à Kenge, 17 morts dont deux hauts responsables de la justice militaire",
       "contenu": "Un avion de la compagnie TRACEP Congo Aviation s'est écrasé le 25 septembre à Kenge (Kwango). Bilan définitif : 17 morts, dont les lieutenants-généraux Joseph Mutombo Katalayi Tiende (Haute Cour militaire) et Lucien-René Likulia Bakumi (auditeur général des FARDC). Plusieurs enquêtes ouvertes. Recoupé : TV5MONDE, Atlasinfo, Cedar News.",
       "dateInfo": "2026-09-26T10:00",
-      "cotationInfo": "1",
+      "cotationInfo": "2",
       "sourceId": "s13",
       "veilleId": "v3",
       "entitesIds": [],
@@ -183,11 +183,11 @@
       "informations": [
         {
           "texte": "17 personnes ont péri dans le crash du 25 septembre à Kenge.",
-          "cotation": "1"
+          "cotation": "2"
         },
         {
           "texte": "L'auditeur général des forces armées figurait parmi les victimes.",
-          "cotation": "1"
+          "cotation": "2"
         }
       ]
     },
@@ -196,7 +196,7 @@
       "titre": "Dakar : les Jeux olympiques de la jeunesse du 31 octobre au 13 novembre",
       "contenu": "Les JOJ d'été se tiennent à Dakar, Diamniadio et Saly du 31 octobre au 13 novembre 2026 : première compétition olympique organisée sur le continent africain. Recoupé : site officiel du CIO (Dakar 2026), Wikipedia.",
       "dateInfo": "2026-09-29T09:00",
-      "cotationInfo": "1",
+      "cotationInfo": "2",
       "sourceId": "s13",
       "veilleId": "v3",
       "entitesIds": [],
@@ -204,11 +204,11 @@
       "informations": [
         {
           "texte": "Les JOJ se tiennent à Dakar du 31 octobre au 13 novembre 2026.",
-          "cotation": "1"
+          "cotation": "2"
         },
         {
           "texte": "Il s'agit de la première compétition olympique organisée en Afrique.",
-          "cotation": "1"
+          "cotation": "2"
         }
       ]
     },
@@ -217,7 +217,7 @@
       "titre": "Kenya : Dangote lance une mégaraffinerie de 16 milliards de dollars à Lamu",
       "contenu": "Aliko Dangote (homme le plus riche d'Afrique) et le président William Ruto ont posé la première pierre d'une raffinerie de 16 milliards de dollars à Lamu, le 30 septembre, en présence des dirigeants éthiopien et ougandais. Capacité prévue : 700 000 barils/jour. Recoupé : BBC News Afrique, New African, Connaissance des Énergies.",
       "dateInfo": "2026-09-30T20:00",
-      "cotationInfo": "1",
+      "cotationInfo": "2",
       "sourceId": "s11",
       "veilleId": "v3",
       "entitesIds": [],
@@ -225,7 +225,7 @@
       "informations": [
         {
           "texte": "Raffinerie de 16 milliards de dollars à Lamu, sur la côte nord du Kenya, lancée le 30 septembre.",
-          "cotation": "1"
+          "cotation": "2"
         },
         {
           "texte": "Appel de Dangote à une prise en main économique du continent d'ici 2030.",
@@ -238,7 +238,7 @@
       "titre": "RDC : l'épidémie d'Ebola dépasse 3 000 morts",
       "contenu": "L'épidémie d'Ebola en RDC, la plus meurtrière jamais enregistrée dans le pays, a dépassé 3 000 morts selon l'Institut national de santé publique congolais ; 60 zones de santé touchées dans six provinces, essais cliniques de vaccins attendus dès octobre ou novembre. Recoupé : La Presse/AFP, La Libre, TVA/TF1.",
       "dateInfo": "2026-09-24T18:00",
-      "cotationInfo": "1",
+      "cotationInfo": "2",
       "sourceId": "s15",
       "veilleId": "v3",
       "entitesIds": [],
@@ -246,7 +246,7 @@
       "informations": [
         {
           "texte": "Plus de 3 000 morts dus à Ebola en RDC (chiffres officiels de l'INSP).",
-          "cotation": "1"
+          "cotation": "2"
         },
         {
           "texte": "Il s'agit de l'épidémie la plus meurtrière jamais enregistrée dans le pays.",
@@ -267,7 +267,7 @@
       "informations": [
         {
           "texte": "Les combats ont repris le 23 septembre dans le nord de l'Éthiopie (Tigré).",
-          "cotation": "1"
+          "cotation": "2"
         },
         {
           "texte": "Rupture des relations diplomatiques entre l'Éthiopie et l'Érythrée, craintes d'escalade régionale.",
@@ -443,9 +443,22 @@
       "toId": "e7",
       "type": "possède",
       "commentaire": "Utilisé comme vecteur d'intrusion"
+    },
+    {
+      "id": "0sxs6s9q",
+      "fromId": "e2",
+      "toId": "e3",
+      "type": "même source",
+      "commentaire": "Issu du même rapport : Sommet régional sur la sécurité énergétique"
+    },
+    {
+      "id": "2osqvpko",
+      "fromId": "e3",
+      "toId": "e4",
+      "type": "même source",
+      "commentaire": "Issu du même rapport : Sommet régional sur la sécurité énergétique"
     }
   ],
   "rejets": [],
-  "migre": true,
-  "majLe": "2026-10-08T13:53:14.796Z"
+  "sauvegardeLe": "2026-10-08T14:04:15.518Z"
 }

@@ -4,30 +4,21 @@ Application React de veille informationnelle (fiche de renseignement, cotation O
 
 ## Fichiers
 
-- **App.jsx** — code source React de l'application.
-- **index.html** — version autonome à ouvrir dans un navigateur (React via CDN, internet requis au lancement).
-- **base.json** — base de données de référence : chargée automatiquement par l'application au démarrage si elle est plus récente que la base locale.
+- **App.jsx** — code source React complet : veilles, rapports, entités, schéma relationnel, frise, cartes multiples (Plan / Satellite / En ligne), détection et fusion des doublons, zoom tactile.
+- **index.html** — version autonome pour navigateur (React via CDN, Babel figé sur 7.29.10), avec panneau de diagnostic au démarrage.
+- **base.json** — base de référence : l'application la consulte automatiquement à chaque ouverture et propose de la charger si elle est plus récente que les données locales.
 
-## Fonctionnalités
+## Chargement automatique de la base (dépôt GitHub)
 
-- Veilles, sources, rapports, entités, liens, cotation OTAN (fiabilité A-F, crédibilité 1-6).
-- **Carte multi-modes** : tuiles OpenStreetMap (Plan) et imagerie Esri (Satellite), projection Mercator, glisser au doigt/souris, zoom molette et pincement à deux doigts.
-- **Mise à jour des veilles** : bouton « 🔄 Actualiser » par veille — interroge les flux RSS/Atom des sources (via relais CORS) et crée des rapports provisoires à valider dans l'onglet « Saisie d'information » (Valider / Rejeter).
-- **Base de référence GitHub** : au démarrage, l'application charge `base.json` depuis ce dépôt s'il est plus récent que la base locale (comparaison des horodatages `majLe`). Bouton « ☁︎ Charger la base distante » pour un chargement forcé (onglet « Données »).
-
-## Cycle de vie des données
-
-1. Les saisies sont enregistrées dans le stockage local du navigateur (par appareil).
-2. Pour publier une base mise à jour : onglet « Données » → Export JSON → remplacer `base.json` du dépôt (ou demander à l'agent de le pousser).
-3. Tous les appareils récupèrent automatiquement la base de référence au prochain lancement.
+- À l'ouverture, l'application interroge `base.json` du dépôt (adresse codée en dur dans le code).
+- Si la version en ligne est plus récente que les données locales, une bannière propose « Charger la base de référence ».
+- L'application reste pleinement fonctionnelle hors ligne (stockage local du navigateur).
+- Pour publier une nouvelle base de référence : Export JSON (onglet « Données ») puis dépôt du fichier en remplacement de `base.json` (glisser-déposer sur github.com).
 
 ## Utilisation
 
-### GitHub Pages (recommandée iPhone/iPad)
-https://resqur-dygcus-wumvu8.github.io/Poste-de-veille/ — puis Partager → « Sur l'écran d'accueil ».
-
-### Fichier local
-Télécharger `index.html` et l'ouvrir dans Safari (Mac) ou l'app Documents (iPhone/iPad).
+- **iPhone/iPad/Mac** : https://resqur-dygcus-wumvu8.github.io/Poste-de-veille/ — Safari → « Sur l'écran d'accueil » pour l'icône d'application.
+- Les données restent dans le stockage local de chaque appareil ; la base de référence GitHub les synchronise à l'ouverture.
 
 ## Cotation OTAN
 
@@ -35,4 +26,4 @@ Télécharger `index.html` et l'ouvrir dans Safari (Mac) ou l'app Documents (iPh
 - Crédibilité de l'information : 1 (confirmée) à 6 (ne peut être jugée).
 
 ---
-Données initiales issues d'un recoupement du 3 octobre 2026 (veille « Actualité africaine » : presse panafricaine et internationale).
+Données initiales recoupées le 3 octobre 2026 (veille « Actualité africaine ») ; base de référence du 8 octobre 2026.
