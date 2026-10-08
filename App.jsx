@@ -1,0 +1,1391 @@
+
+import React, { useEffect, useMemo, useRef, useState } from "react";
+
+// ============================================================
+// Application de veille & capitalisation de la connaissance
+// Cotation OTAN : source A–F, information 1–6
+// ============================================================
+
+const uid = () => Math.random().toString(36).slice(2, 10);
+
+const FIABILITE = [
+  { code: "A", label: "Totalement fiable" },
+  { code: "B", label: "Habituellement fiable" },
+  { code: "C", label: "Assez fiable" },
+  { code: "D", label: "Habituellement non fiable" },
+  { code: "E", label: "Non fiable" },
+  { code: "F", label: "Fiabilité ne peut être jugée" },
+];
+
+const CREDIBILITE = [
+  { code: "1", label: "Confirmée par d'autres sources" },
+  { code: "2", label: "Probablement vraie" },
+  { code: "3", label: "Peut-être vraie" },
+  { code: "4", label: "Douteuse" },
+  { code: "5", label: "Improbable" },
+  { code: "6", label: "Véracité ne peut être jugée" },
+];
+
+const TYPES_ENTITE = [
+  { code: "evenement", label: "Événement", couleur: "#e11d48", icone: "⚡" },
+  { code: "personne", label: "Personne", couleur: "#2563eb", icone: "👤" },
+  { code: "lieu", label: "Lieu", couleur: "#16a34a", icone: "📍" },
+  { code: "objet", label: "Objet", couleur: "#d97706", icone: "📦" },
+  { code: "organisation", label: "Organisation", couleur: "#7c3aed", icone: "🏛️" },
+];
+
+const TYPES_LIEN = [
+  "membre de", "dirige", "participe à", "impliqué dans", "localisé à",
+  "possède", "affilié à", "allié de", "cible de", "communicant avec", "lien familial",
+];
+
+const couleurType = (t) => { const x = TYPES_ENTITE.find((e) => e.code === t); return x ? x.couleur : "#555"; };
+const iconeType = (t) => { const x = TYPES_ENTITE.find((e) => e.code === t); return x ? x.icone : "•"; };
+
+const DB_KEY = "veille-renseignement-db-v1";
+
+const DB_DEMO = {
+  veilles: [
+    { id: "v1", nom: "Géopolitique Europe de l'Est", thematiques: "conflits, diplomatie, énergie", creeeLe: "2026-09-28" },
+    { id: "v2", nom: "Cybersécurité critique", thematiques: "infrastructures, attaques, régulation", creeeLe: "2026-10-01" },
+  ],
+  sources: [
+    { id: "s1", nom: "Agence de presse internationale", type: "ouverte", fiabilite: "B", description: "Dépêches vérifiées, citations croisées", veilleId: "v1" },
+    { id: "s2", nom: "Rapport interne confidentiel", type: "fermee", fiabilite: "C", description: "Document classifié fourni par un contact", veilleId: "v1" },
+    { id: "s3", nom: "Blog spécialisé sécurité", type: "ouverte", fiabilite: "D", description: "Analyses pointues mais partisanes", veilleId: "v2" },
+  ],
+  rapports: [
+    {
+      id: "r1", titre: "Sommet régional sur la sécurité énergétique",
+      contenu: "Un sommet réunit plusieurs dirigeants et organisations à Varsovie pour discuter de la sécurisation des infrastructures énergétiques.",
+      dateInfo: "2026-09-30T09:00", cotationInfo: "2", sourceId: "s1", veilleId: "v1",
+      entitesIds: ["e1", "e2", "e3", "e4"],
+      informations: [
+        { texte: "Le sommet s'ouvre le 30 septembre à 9h à Varsovie.", cotation: "2" },
+        { texte: "Une coopération renforcée sur les infrastructures énergétiques serait annoncée.", cotation: "3" },
+      ],
+    },
+    {
+      id: "r2", titre: "Cyberattaque contre un opérateur électrique",
+      contenu: "Un groupe clandestin a ciblé un opérateur électrique européen via une faille d'un équipement industriel.",
+      dateInfo: "2026-10-02T03:30", cotationInfo: "3", sourceId: "s2", veilleId: "v2",
+      entitesIds: ["e5", "e6", "e7"],
+      informations: [
+        { texte: "L'attaque a eu lieu dans la nuit du 1er au 2 octobre.", cotation: "2" },
+        { texte: "Le groupe « Tempête » serait à l'origine de l'intrusion.", cotation: "4" },
+      ],
+    },
+  ],
+  entites: [
+    { id: "e1", type: "evenement", nom: "Sommet de Varsovie", resume: "Sommet régional sur la sécurité énergétique", dateHeure: "2026-09-30T09:00", lieu: "Varsovie", prenom: "", biographie: "", latitude: "", longitude: "", description: "", rapportIds: ["r1"] },
+    { id: "e2", type: "personne", nom: "Nowak", resume: "Négociatrice en chef", dateHeure: "", lieu: "", prenom: "Anna", biographie: "Diplomate chevronnée, spécialiste des questions énergétiques.", latitude: "", longitude: "", description: "", rapportIds: ["r1"] },
+    { id: "e3", type: "lieu", nom: "Varsovie", resume: "Capitale, hôte du sommet", dateHeure: "", lieu: "", prenom: "", biographie: "", latitude: "52.23", longitude: "21.01", description: "", rapportIds: ["r1"] },
+    { id: "e4", type: "organisation", nom: "Conseil énergétique régional", resume: "Organisation intergouvernementale", dateHeure: "", lieu: "", prenom: "", biographie: "", latitude: "", longitude: "", description: "Coordonne les politiques énergétiques.", rapportIds: ["r1"] },
+    { id: "e5", type: "organisation", nom: "Groupe clandestin « Tempête »", resume: "Groupe cybercriminel suspecté", dateHeure: "", lieu: "", prenom: "", biographie: "", latitude: "", longitude: "", description: "Connu pour des attaques contre des infrastructures.", rapportIds: ["r2"] },
+    { id: "e6", type: "lieu", nom: "Poste de transformation Est", resume: "Site ciblé par la cyberattaque", dateHeure: "", lieu: "", prenom: "", biographie: "", latitude: "50.85", longitude: "4.35", description: "", rapportIds: ["r2"] },
+    { id: "e7", type: "objet", nom: "Routeur industriel SCC-200", resume: "Équipement vulnérable exploité", dateHeure: "", lieu: "", prenom: "", biographie: "", latitude: "", longitude: "", description: "Matériel SCADA comportant la faille exploitée.", rapportIds: ["r2"] },
+  ],
+  liens: [
+    { id: "l1", fromId: "e2", toId: "e4", type: "membre de", commentaire: "Représente son pays au conseil" },
+    { id: "l2", fromId: "e2", toId: "e1", type: "participe à", commentaire: "" },
+    { id: "l3", fromId: "e1", toId: "e3", type: "localisé à", commentaire: "" },
+    { id: "l4", fromId: "e4", toId: "e1", type: "impliqué dans", commentaire: "" },
+    { id: "l5", fromId: "e5", toId: "e6", type: "cible de", commentaire: "Attaque du 02/10/2026" },
+    { id: "l6", fromId: "e7", toId: "e6", type: "localisé à", commentaire: "" },
+    { id: "l7", fromId: "e5", toId: "e7", type: "possède", commentaire: "Utilisé comme vecteur d'intrusion" },
+  ],
+};
+
+function chargerDB() {
+  const fusionnerAfrique = (d) => {
+    d.veilles = d.veilles.filter((v) => v.id !== "v3");
+    d.sources = d.sources.filter((s) => !s.id.startsWith("s1") || ["s1", "s2", "s3"].includes(s.id));
+    d.rapports = d.rapports.filter((r) => !["r10", "r11", "r12", "r13", "r14", "r15"].includes(r.id));
+    d.veilles.push(...VEILLE_AFRIQUE.veilles);
+    const idsSources = new Set(VEILLE_AFRIQUE.sources.map((s) => s.id));
+    d.sources = d.sources.filter((s) => !idsSources.has(s.id));
+    d.sources.push(...VEILLE_AFRIQUE.sources);
+    d.rapports.push(...VEILLE_AFRIQUE.rapports);
+    return d;
+  };
+  try {
+    const raw = localStorage.getItem(DB_KEY);
+    if (raw) return fusionnerAfrique(JSON.parse(raw));
+  } catch (e) {}
+  return {
+    veilles: [...DB_DEMO.veilles, ...VEILLE_AFRIQUE.veilles],
+    sources: [...DB_DEMO.sources, ...VEILLE_AFRIQUE.sources],
+    rapports: [...DB_DEMO.rapports, ...VEILLE_AFRIQUE.rapports],
+    entites: DB_DEMO.entites,
+    liens: DB_DEMO.liens,
+  };
+}
+
+// Veille réelle « Actualité africaine » : sources et articles issus d'une recherche web du 3 octobre 2026
+const VEILLE_AFRIQUE = {
+  veilles: [
+    { id: "v3", nom: "Actualité africaine", thematiques: "politique, économie, société — presse panafricaine et internationale", creeeLe: "2026-10-03" },
+  ],
+  sources: [
+    { id: "s10", nom: "RFI Afrique", type: "ouverte", fiabilite: "B", description: "Rédaction dédiée au continent : Maghreb, Sahel, Afrique centrale et de l'Ouest", veilleId: "v3", url: "https://www.rfi.fr/fr/afrique/" },
+    { id: "s11", nom: "Africanews", type: "ouverte", fiabilite: "C", description: "Chaîne panafricaine d'information en continu", veilleId: "v3", url: "https://fr.africanews.com/" },
+    { id: "s12", nom: "BBC News Africa", type: "ouverte", fiabilite: "B", description: "Section Afrique de la BBC, correspondants sur le continent", veilleId: "v3", url: "https://www.bbc.com/news/world/africa" },
+    { id: "s13", nom: "Jeune Afrique", type: "ouverte", fiabilite: "C", description: "Hebdomadaire panafricain, sources confirmées en local", veilleId: "v3", url: "https://www.jeuneafrique.com/" },
+    { id: "s14", nom: "allAfrica.com", type: "ouverte", fiabilite: "C", description: "Agrégateur : plus de 600 dépêches quotidiennes de 90 organisations de presse africaines", veilleId: "v3", url: "https://allafrica.com/" },
+    { id: "s15", nom: "La Presse (Québec) — Afrique", type: "ouverte", fiabilite: "B", description: "Section Afrique du quotidien québécois, dépêches d'agences", veilleId: "v3", url: "https://www.lapresse.ca/international/afrique/" },
+  ],
+  rapports: [
+    {
+      id: "r10", titre: "Afrique du Sud : double fusillade au Cap et à Johannesburg, 27 morts",
+      contenu: "Huit hommes armés ont tué 17 personnes dans un bar de l'ouest de Johannesburg, puis dix autres ont été tuées dans un établissement nocturne du Cap, dans la nuit du 26 au 27 septembre. La police a lancé des chasses à l'homme avec des unités spéciales. Recoupé : RFI, France 24, franceinfo, TF1.",
+      dateInfo: "2026-09-27T10:00", cotationInfo: "1", sourceId: "s12", veilleId: "v3", entitesIds: [],
+      url: "https://www.bbc.com/news/world/africa",
+      informations: [
+        { texte: "27 morts au total : 17 à Johannesburg (bar, West Rand) et 10 au Cap (township).", cotation: "1" },
+        { texte: "La violence armée et les rivalités entre gangs demeurent un fléau national en Afrique du Sud.", cotation: "1" },
+      ],
+    },
+    {
+      id: "r11", titre: "RDC : crash d'un avion à Kenge, 17 morts dont deux hauts responsables de la justice militaire",
+      contenu: "Un avion de la compagnie TRACEP Congo Aviation s'est écrasé le 25 septembre à Kenge (Kwango). Bilan définitif : 17 morts, dont les lieutenants-généraux Joseph Mutombo Katalayi Tiende (Haute Cour militaire) et Lucien-René Likulia Bakumi (auditeur général des FARDC). Plusieurs enquêtes ouvertes. Recoupé : TV5MONDE, Atlasinfo, Cedar News.",
+      dateInfo: "2026-09-26T10:00", cotationInfo: "1", sourceId: "s13", veilleId: "v3", entitesIds: [],
+      url: "https://www.jeuneafrique.com/",
+      informations: [
+        { texte: "17 personnes ont péri dans le crash du 25 septembre à Kenge.", cotation: "1" },
+        { texte: "L'auditeur général des forces armées figurait parmi les victimes.", cotation: "1" },
+      ],
+    },
+    {
+      id: "r12", titre: "Dakar : les Jeux olympiques de la jeunesse du 31 octobre au 13 novembre",
+      contenu: "Les JOJ d'été se tiennent à Dakar, Diamniadio et Saly du 31 octobre au 13 novembre 2026 : première compétition olympique organisée sur le continent africain. Recoupé : site officiel du CIO (Dakar 2026), Wikipedia.",
+      dateInfo: "2026-09-29T09:00", cotationInfo: "1", sourceId: "s13", veilleId: "v3", entitesIds: [],
+      url: "https://www.jeuneafrique.com/",
+      informations: [
+        { texte: "Les JOJ se tiennent à Dakar du 31 octobre au 13 novembre 2026.", cotation: "1" },
+        { texte: "Il s'agit de la première compétition olympique organisée en Afrique.", cotation: "1" },
+      ],
+    },
+    {
+      id: "r13", titre: "Kenya : Dangote lance une mégaraffinerie de 16 milliards de dollars à Lamu",
+      contenu: "Aliko Dangote (homme le plus riche d'Afrique) et le président William Ruto ont posé la première pierre d'une raffinerie de 16 milliards de dollars à Lamu, le 30 septembre, en présence des dirigeants éthiopien et ougandais. Capacité prévue : 700 000 barils/jour. Recoupé : BBC News Afrique, New African, Connaissance des Énergies.",
+      dateInfo: "2026-09-30T20:00", cotationInfo: "1", sourceId: "s11", veilleId: "v3", entitesIds: [],
+      url: "https://fr.africanews.com/",
+      informations: [
+        { texte: "Raffinerie de 16 milliards de dollars à Lamu, sur la côte nord du Kenya, lancée le 30 septembre.", cotation: "1" },
+        { texte: "Appel de Dangote à une prise en main économique du continent d'ici 2030.", cotation: "2" },
+      ],
+    },
+    {
+      id: "r14", titre: "RDC : l'épidémie d'Ebola dépasse 3 000 morts",
+      contenu: "L'épidémie d'Ebola en RDC, la plus meurtrière jamais enregistrée dans le pays, a dépassé 3 000 morts selon l'Institut national de santé publique congolais ; 60 zones de santé touchées dans six provinces, essais cliniques de vaccins attendus dès octobre ou novembre. Recoupé : La Presse/AFP, La Libre, TVA/TF1.",
+      dateInfo: "2026-09-24T18:00", cotationInfo: "1", sourceId: "s15", veilleId: "v3", entitesIds: [],
+      url: "https://www.lapresse.ca/international/afrique/",
+      informations: [
+        { texte: "Plus de 3 000 morts dus à Ebola en RDC (chiffres officiels de l'INSP).", cotation: "1" },
+        { texte: "Il s'agit de l'épidémie la plus meurtrière jamais enregistrée dans le pays.", cotation: "2" },
+      ],
+    },
+    {
+      id: "r15", titre: "Éthiopie : reprise des combats dans le Tigré depuis le 23 septembre",
+      contenu: "Depuis le 23 septembre, les combats ont repris dans le nord de l'Éthiopie entre le gouvernement fédéral et les autorités du Tigré (TPLF) ; le TPLF s'est emparé des trois aéroports du Tigré, des combats ont été signalés en Amhara et Afar. L'Éthiopie et l'Érythrée ont rompu leurs relations diplomatiques. Recoupé : AFP, Africanews, Boursorama/AFP.",
+      dateInfo: "2026-10-02T08:00", cotationInfo: "2", sourceId: "s11", veilleId: "v3", entitesIds: [],
+      url: "https://fr.africanews.com/",
+      informations: [
+        { texte: "Les combats ont repris le 23 septembre dans le nord de l'Éthiopie (Tigré).", cotation: "1" },
+        { texte: "Rupture des relations diplomatiques entre l'Éthiopie et l'Érythrée, craintes d'escalade régionale.", cotation: "2" },
+        { texte: "Des dizaines de milliers de déplacés dans l'Afar selon des sources non vérifiées indépendamment.", cotation: "4" },
+      ],
+    },
+  ],
+};
+
+function Badge({ children, couleur }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold"
+      style={{ backgroundColor: (couleur || "#334155") + "22", color: couleur || "#334155" }}
+    >
+      {children}
+    </span>
+  );
+}
+
+function Card({ children, className = "", style }) {
+  return <div style={style} className={`rounded-xl border border-slate-200 bg-white p-4 shadow-sm ${className}`}>{children}</div>;
+}
+
+function Field({ label, children }) {
+  return (
+    <label className="block text-sm">
+      <span className="mb-1 block font-medium text-slate-600">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+const inputCls =
+  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200";
+
+function CotationBadge({ source, info }) {
+  const f = source || "-";
+  const i = info || "-";
+  const couleurCotation = (f, i) => {
+    const fv = "ABCDEF".indexOf(f);
+    const iv = parseInt(i) - 1;
+    if (fv < 0 || isNaN(iv) || iv < 0) return "#64748b";
+    const score = (5 - fv) + (5 - iv);
+    if (score >= 8) return "#16a34a";
+    if (score >= 5) return "#ca8a04";
+    if (score >= 2) return "#ea580c";
+    return "#dc2626";
+  };
+  return (
+    <Badge couleur={couleurCotation(f, i)}>
+      {f}{i}
+    </Badge>
+  );
+}
+
+function GrapheRelationnel({ db, onSelect, selectedId }) {
+  const W = 900, H = 640;
+  const [positions, setPositions] = useState({});
+  const [dragId, setDragId] = useState(null);
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [dragStart, setDragStart] = useState(null);
+  const svgRef = useRef(null);
+  const movedRef = useRef(false);
+
+  const layoutInitial = () => {
+    const pos = {};
+    const n = db.entites.length;
+    // disposition en cercles concentriques, espacée et déterministe
+    const nbAnneaux = Math.max(1, Math.ceil(n / 8));
+    let idx = 0;
+    for (let a = 0; a < nbAnneaux; a++) {
+      const surAnneau = Math.min(n - idx, a === 0 ? Math.min(n, 6) : 8);
+      const rayon = a === 0 ? 0 : 150 + (a - 1) * 170;
+      for (let i = 0; i < surAnneau; i++) {
+        const e = db.entites[idx];
+        const angle = (i / surAnneau) * Math.PI * 2 + (a % 2) * (Math.PI / surAnneau);
+        pos[e.id] = {
+          x: W / 2 + Math.cos(angle) * rayon,
+          y: H / 2 + Math.sin(angle) * rayon,
+        };
+        idx++;
+      }
+    }
+    return pos;
+  };
+
+  useEffect(() => {
+    setPositions((prev) => {
+      const next = {};
+      const frais = layoutInitial();
+      db.entites.forEach((e) => {
+        next[e.id] = prev[e.id] || frais[e.id];
+      });
+      return next;
+    });
+  }, [db.entites.map((e) => e.id).join(",")]);
+
+  const coordonneesSvg = (clientX, clientY) => {
+    const rect = svgRef.current.getBoundingClientRect();
+    const scale = Math.min(W / rect.width, H / rect.height) * zoom;
+    return {
+      x: ((clientX - rect.left) / rect.width) * W / zoom - pan.x / zoom,
+      y: ((clientY - rect.top) / rect.height) * H / zoom - pan.y / zoom,
+    };
+  };
+
+  const onPointerMove = (ev) => {
+    if (dragId) {
+      const p = coordonneesSvg(ev.clientX, ev.clientY);
+      movedRef.current = true;
+      setPositions((prev) => ({ ...prev, [dragId]: { x: p.x, y: p.y } }));
+      ev.preventDefault();
+    } else if (dragStart) {
+      const rect = svgRef.current.getBoundingClientRect();
+      const scale = W / rect.width;
+      setPan({
+        x: dragStart.pan.x + (ev.clientX - dragStart.x) * scale,
+        y: dragStart.pan.y + (ev.clientY - dragStart.y) * scale,
+      });
+    }
+  };
+
+  const finInteraction = () => {
+    setDragId(null);
+    setDragStart(null);
+  };
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white px-3 py-2">
+        <button onClick={() => setZoom((z) => Math.max(0.3, +(z - 0.2).toFixed(2)))} className="rounded-lg bg-slate-200 px-2.5 py-1 text-sm font-bold hover:bg-slate-300">−</button>
+        <span className="w-12 text-center text-xs text-slate-500">{Math.round(zoom * 100)}%</span>
+        <button onClick={() => setZoom((z) => Math.min(3, +(z + 0.2).toFixed(2)))} className="rounded-lg bg-slate-200 px-2.5 py-1 text-sm font-bold hover:bg-slate-300">+</button>
+        <button onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }} className="rounded-lg bg-slate-200 px-2.5 py-1 text-xs hover:bg-slate-300">Recentrer</button>
+        <button onClick={() => setPositions(layoutInitial())} className="rounded-lg bg-slate-200 px-2.5 py-1 text-xs hover:bg-slate-300">Réorganiser</button>
+        <span className="ml-auto text-xs text-slate-400">Clic : fiche · Glisser un nœud : le déplacer (définitif) · Glisser le fond : naviguer</span>
+      </div>
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${W} ${H}`}
+        className="w-full cursor-grab touch-none select-none"
+        style={{ height: 640 }}
+        onPointerDown={(ev) => { setDragStart({ x: ev.clientX, y: ev.clientY, pan }); }}
+        onPointerMove={onPointerMove}
+        onPointerUp={finInteraction}
+        onPointerLeave={finInteraction}
+      >
+        <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`}>
+          {db.liens.filter((l) => positions[l.fromId] && positions[l.toId]).map((l) => {
+            const a = positions[l.fromId], b = positions[l.toId];
+            const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+            const actif = selectedId && (selectedId === l.fromId || selectedId === l.toId);
+            return (
+              <g key={l.id} pointerEvents="none">
+                <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#94a3b8" strokeWidth={actif ? 2.5 : 1.4} />
+                <text x={mx} y={my - 4} textAnchor="middle" fontSize="10" fill="#64748b">{l.type}</text>
+              </g>
+            );
+          })}
+          {db.entites.map((e) => {
+            const p = positions[e.id];
+            if (!p) return null;
+            const sel = selectedId === e.id;
+            return (
+              <g
+                key={e.id}
+                transform={`translate(${p.x},${p.y})`}
+                style={{ cursor: "pointer" }}
+                onPointerDown={(ev) => {
+                  ev.stopPropagation();
+                  movedRef.current = false;
+                  setDragStart(null);
+                  setDragId(e.id);
+                  ev.target.setPointerCapture && ev.target.setPointerCapture(ev.pointerId);
+                }}
+                onClick={() => { if (!movedRef.current) onSelect(e.id); }}
+              >
+                <circle r={sel ? 26 : 20} fill={couleurType(e.type)} fillOpacity={sel ? 0.95 : 0.85} stroke="#fff" strokeWidth="2" />
+                <text textAnchor="middle" y="5" fontSize="14" fill="#fff">{iconeType(e.type)}</text>
+                <text textAnchor="middle" y="40" fontSize="11" fontWeight="600" fill="#1e293b">
+                  {(e.prenom ? e.prenom + " " : "") + e.nom}
+                </text>
+              </g>
+            );
+          })}
+        </g>
+      </svg>
+      <div className="flex flex-wrap gap-2 border-t border-slate-200 bg-white px-3 py-2">
+        {TYPES_ENTITE.map((t) => (
+          <Badge key={t.code} couleur={t.couleur}>{t.icone} {t.label}</Badge>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FriseChronologique({ db, onSelect }) {
+  const evenements = db.entites
+    .filter((e) => e.type === "evenement" && e.dateHeure)
+    .sort((a, b) => a.dateHeure.localeCompare(b.dateHeure));
+  const rapports = db.rapports.filter((r) => r.dateInfo).sort((a, b) => a.dateInfo.localeCompare(b.dateInfo));
+
+  const PointFrise = ({ date, titre, couleur, icone, onClick, badge }) => (
+    <button onClick={onClick} className="group flex w-full gap-3 text-left">
+      <div className="flex w-28 shrink-0 flex-col items-end pt-1 text-xs text-slate-500">{date}</div>
+      <div className="relative flex flex-col items-center">
+        <div className="absolute top-5 h-full w-px bg-slate-300 group-last:hidden" />
+        <div className="z-10 flex h-9 w-9 items-center justify-center rounded-full border-2 border-white text-sm shadow"
+          style={{ backgroundColor: couleur }}>{icone}</div>
+      </div>
+      <div className="pb-6">
+        <div className="text-sm font-semibold text-slate-800 group-hover:underline">{titre}</div>
+        {badge}
+      </div>
+    </button>
+  );
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <h3 className="mb-3 font-semibold text-slate-800">Événements</h3>
+        {evenements.length === 0 && <p className="text-sm text-slate-500">Aucun événement daté pour l'instant.</p>}
+        <div className="flex flex-col">
+          {evenements.map((e) => {
+            const dt = e.dateHeure;
+            const date = dt.slice(0, 10) + (dt.length > 10 ? " " + dt.slice(11, 16) : "");
+            return (
+              <PointFrise key={e.id} date={date} titre={e.nom} couleur={couleurType(e.type)} icone={iconeType(e.type)}
+                onClick={() => onSelect(e.id)}
+                badge={<div className="text-xs text-slate-500">{e.resume}</div>} />
+            );
+          })}
+        </div>
+      </Card>
+      <Card>
+        <h3 className="mb-3 font-semibold text-slate-800">Informations collectées (rapports)</h3>
+        <div className="flex flex-col">
+          {rapports.map((r) => {
+            const src = db.sources.find((s) => s.id === r.sourceId);
+            const veilleRapport = db.veilles.find((v) => v.id === r.veilleId);
+            return (
+              <PointFrise key={r.id} date={r.dateInfo.replace("T", " ").slice(0, 16)} titre={r.titre} couleur="#475569" icone="📄"
+                onClick={() => {}}
+                badge={<div className="flex flex-wrap items-center gap-1"><CotationBadge source={src ? src.fiabilite : undefined} info={r.cotationInfo} />{veilleRapport && <span className="text-xs text-slate-500">🔎 {veilleRapport.nom}</span>}</div>} />
+            );
+          })}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function VueCarte({ db, onSelect }) {
+  const lieux = db.entites.filter((e) => e.type === "lieu" && e.latitude && e.longitude);
+  const W = 900, H = 500;
+  const lats = lieux.map((l) => parseFloat(l.latitude));
+  const lngs = lieux.map((l) => parseFloat(l.longitude));
+  const hasData = lieux.length > 0;
+  const minLat = hasData ? Math.min(...lats) - 3 : 35;
+  const maxLat = hasData ? Math.max(...lats) + 3 : 60;
+  const minLng = hasData ? Math.min(...lngs) - 5 : -10;
+  const maxLng = hasData ? Math.max(...lngs) + 5 : 30;
+  const proj = (lat, lng) => ({
+    x: ((lng - minLng) / (maxLng - minLng || 1)) * (W - 80) + 40,
+    y: H - (((lat - minLat) / (maxLat - minLat || 1)) * (H - 80) + 40),
+  });
+
+  return (
+    <div className="space-y-3">
+      <div className="overflow-hidden rounded-xl border border-slate-200">
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full bg-[#0f172a]" style={{ height: 500 }}>
+          {Array.from({ length: 9 }).map((_, i) => (
+            <line key={"v" + i} x1={(i * W) / 8} y1={0} x2={(i * W) / 8} y2={H} stroke="#1e293b" />
+          ))}
+          {Array.from({ length: 6 }).map((_, i) => (
+            <line key={"h" + i} x1={0} y1={(i * H) / 5} x2={W} y2={(i * H) / 5} stroke="#1e293b" />
+          ))}
+          <text x={12} y={H - 10} fill="#475569" fontSize="10">Projection équirectangulaire · {minLng.toFixed(0)}°E → {maxLng.toFixed(0)}°E · {minLat.toFixed(0)}°N → {maxLat.toFixed(0)}°N</text>
+          {db.liens.map((l) => {
+            const a = db.entites.find((e) => e.id === l.fromId);
+            const b = db.entites.find((e) => e.id === l.toId);
+            if (!a || !b || !a.latitude || !b.latitude) return null;
+            const pa = proj(parseFloat(a.latitude), parseFloat(a.longitude));
+            const pb = proj(parseFloat(b.latitude), parseFloat(b.longitude));
+            return <line key={l.id} x1={pa.x} y1={pa.y} x2={pb.x} y2={pb.y} stroke="#38bdf8" strokeWidth="1" strokeDasharray="4 3" />;
+          })}
+          {lieux.map((l) => {
+            const p = proj(parseFloat(l.latitude), parseFloat(l.longitude));
+            return (
+              <g key={l.id} className="cursor-pointer" onClick={() => onSelect(l.id)}>
+                <circle cx={p.x} cy={p.y} r="16" fill="#16a34a" fillOpacity="0.25" />
+                <circle cx={p.x} cy={p.y} r="6" fill="#16a34a" />
+                <text x={p.x + 10} y={p.y - 8} fontSize="12" fill="#e2e8f0" fontWeight="600">{l.nom}</text>
+                <text x={p.x + 10} y={p.y + 6} fontSize="10" fill="#94a3b8">{l.latitude}, {l.longitude}</text>
+              </g>
+            );
+          })}
+          {!hasData && <text x={W / 2} y={H / 2} textAnchor="middle" fill="#94a3b8">Ajoutez des lieux avec latitude / longitude pour les visualiser.</text>}
+        </svg>
+      </div>
+      <p className="text-xs text-slate-500">
+        Vue plan de situation. Les lignes pointillées représentent les liens entre lieux géolocalisés.
+        Pour une imagerie satellite ou des photos aériennes, raccordez l'application à un fournisseur de tuiles (OpenStreetMap, IGN, etc.).
+      </p>
+    </div>
+  );
+}
+
+function FicheEntite({ entite, db, onClose, onEdit }) {
+  const liens = db.liens.filter((l) => l.fromId === entite.id || l.toId === entite.id);
+  const rapports = db.rapports.filter((r) => r.entitesIds.includes(entite.id));
+  const t = TYPES_ENTITE.find((x) => x.code === entite.type);
+  return (
+    <Card className="border-l-4" style={{ borderLeftColor: couleurType(entite.type) }}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <Badge couleur={couleurType(entite.type)}>{t ? t.icone : ""} {t ? t.label : ""}</Badge>
+          </div>
+          <h3 className="mt-2 text-xl font-bold text-slate-900">
+            {entite.prenom && entite.type === "personne" ? `${entite.prenom} ` : ""}{entite.nom}
+          </h3>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={onEdit} className="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700">Modifier</button>
+          <button onClick={onClose} className="rounded-lg bg-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-300">Fermer</button>
+        </div>
+      </div>
+      <div className="mt-3 space-y-2 text-sm text-slate-700">
+        {entite.resume && <p><span className="font-semibold">Résumé :</span> {entite.resume}</p>}
+        {entite.type === "evenement" && (
+          <>
+            <p><span className="font-semibold">Date et heure :</span> {entite.dateHeure.replace("T", " ")}</p>
+            {entite.lieu && <p><span className="font-semibold">Lieu :</span> {entite.lieu}</p>}
+          </>
+        )}
+        {entite.type === "personne" && entite.biographie && <p><span className="font-semibold">Biographie :</span> {entite.biographie}</p>}
+        {entite.type === "lieu" && (entite.latitude || entite.longitude) && (
+          <p><span className="font-semibold">Coordonnées :</span> {entite.latitude}°, {entite.longitude}°</p>
+        )}
+        {entite.description && <p><span className="font-semibold">Description :</span> {entite.description}</p>}
+      </div>
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <div>
+          <h4 className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">Liens ({liens.length})</h4>
+          <ul className="space-y-1 text-sm">
+            {liens.map((l) => {
+              const autre = l.fromId === entite.id ? db.entites.find((e) => e.id === l.toId) : db.entites.find((e) => e.id === l.fromId);
+              if (!autre) return null;
+              const sens = l.fromId === entite.id ? `${l.type} →` : `← ${l.type}`;
+              return (
+                <li key={l.id} className="text-slate-700">
+                  {sens} <span className="font-medium">{iconeType(autre.type)} {autre.prenom ? autre.prenom + " " : ""}{autre.nom}</span>
+                  {l.commentaire && <span className="text-slate-400"> ({l.commentaire})</span>}
+                </li>
+              );
+            })}
+            {liens.length === 0 && <li className="text-slate-400">Aucun lien.</li>}
+          </ul>
+        </div>
+        <div>
+          <h4 className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">Sources / rapports ({rapports.length})</h4>
+          <ul className="space-y-1 text-sm">
+            {rapports.map((r) => {
+              const src = db.sources.find((s) => s.id === r.sourceId);
+              const veilleRapport = db.veilles.find((v) => v.id === r.veilleId);
+              return (
+                <li key={r.id} className="text-slate-700">
+                  <span className="font-medium">{r.titre}</span>{" "}
+                  <CotationBadge source={src ? src.fiabilite : undefined} info={r.cotationInfo} />{" "}
+                  {src && <span className="text-xs text-slate-400">— {src.nom}</span>}
+                  {veilleRapport && <span className="text-xs text-slate-400"> · 🔎 {veilleRapport.nom}</span>}
+                </li>
+              );
+            })}
+            {rapports.length === 0 && <li className="text-slate-400">Aucun rapport rattaché.</li>}
+          </ul>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function PageAccueil({ db, setOnglet, setSelectedId, setFormVeille, onOuvrirRapport }) {
+  const rapportsTries = [...db.rapports].sort((a, b) => (b.dateInfo || "").localeCompare(a.dateInfo || ""));
+  const recents = rapportsTries.slice(0, 5);
+  const veilleAvecId = (r) => db.veilles.find((v) => v.id === r.veilleId);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-slate-800">🔎 Veilles actives</h3>
+            <button onClick={() => setOnglet("veilles")} className="rounded-lg bg-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-300">Gérer les veilles</button>
+          </div>
+          <div className="mt-3 space-y-2">
+            {db.veilles.map((v) => {
+              const nbRapports = db.rapports.filter((r) => r.veilleId === v.id).length;
+              const nbSources = db.sources.filter((s) => s.veilleId === v.id).length;
+              return (
+                <button key={v.id} onClick={() => setOnglet("veilles")}
+                  className="w-full rounded-lg bg-slate-50 p-3 text-left hover:bg-slate-100">
+                  <div className="font-semibold text-slate-800">{v.nom}</div>
+                  <div className="text-xs text-slate-500">{v.thematiques}</div>
+                  <div className="mt-1 flex gap-2">
+                    <Badge couleur="#0284c7">{nbRapports} rapport(s)</Badge>
+                    <Badge couleur="#7c3aed">{nbSources} source(s)</Badge>
+                    <Badge>créée le {v.creeeLe}</Badge>
+                  </div>
+                </button>
+              );
+            })}
+            {db.veilles.length === 0 && <p className="text-sm text-slate-500">Aucune veille en cours. Créez-en une dans l'onglet « Veilles & sources ».</p>}
+          </div>
+        </Card>
+        <Card>
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-slate-800">📊 État de la base</h3>
+            <button onClick={() => setOnglet("donnees")} className="rounded-lg bg-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-300">Données</button>
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-3 text-center">
+            <div className="rounded-lg bg-slate-50 p-3"><div className="text-2xl font-bold">{db.rapports.length}</div><div className="text-xs text-slate-500">Rapports</div></div>
+            <div className="rounded-lg bg-slate-50 p-3"><div className="text-2xl font-bold">{db.entites.length}</div><div className="text-xs text-slate-500">Entités</div></div>
+            <div className="rounded-lg bg-slate-50 p-3"><div className="text-2xl font-bold">{db.liens.length}</div><div className="text-xs text-slate-500">Liens</div></div>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button onClick={() => setOnglet("saisie")} className="rounded-lg bg-slate-800 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700">＋ Nouveau rapport</button>
+            <button onClick={() => setOnglet("graphe")} className="rounded-lg bg-slate-800 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700">🧩 Schéma relationnel</button>
+            <button onClick={() => setOnglet("frise")} className="rounded-lg bg-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-300">📅 Frise chronologique</button>
+            <button onClick={() => setOnglet("carte")} className="rounded-lg bg-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-300">🗺️ Carte</button>
+          </div>
+        </Card>
+      </div>
+      <Card>
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-slate-800">📄 Dernières informations collectées</h3>
+          <button onClick={() => setOnglet("saisie")} className="text-xs text-slate-500 underline hover:text-slate-800">Voir tous les rapports</button>
+        </div>
+        <div className="mt-3 space-y-2">
+          {recents.map((r) => {
+            const src = db.sources.find((s) => s.id === r.sourceId);
+            const v = veilleAvecId(r);
+            return (
+              <div key={r.id} onClick={() => onOuvrirRapport(r.id)} className="flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 p-3 hover:bg-slate-100" style={{ cursor: "pointer" }}>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-slate-800">{r.titre}</div>
+                  <div className="truncate text-xs text-slate-500">{r.contenu}</div>
+                </div>
+                <CotationBadge source={src ? src.fiabilite : undefined} info={r.cotationInfo} />
+                {v && <Badge couleur="#7c3aed">🔎 {v.nom}</Badge>}
+              </div>
+            );
+          })}
+          {recents.length === 0 && <p className="text-sm text-slate-500">Aucun rapport enregistré pour l'instant.</p>}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function RapportDetail({ rapport, db, onClose, majRapport, majSource }) {
+  const src = db.sources.find((s) => s.id === rapport.sourceId);
+  const veille = db.veilles.find((v) => v.id === rapport.veilleId);
+  const infos = rapport.informations || [];
+  const majInfo = (idx, champ, valeur) => {
+    majRapport(rapport.id, (r) => {
+      r.informations = (r.informations || []).map((x, i) => i === idx ? { ...x, [champ]: valeur } : x);
+    });
+  };
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={onClose}>
+      <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between gap-3 border-b border-slate-200 p-4">
+          <div>
+            <h3 className="text-lg font-bold text-slate-900">{rapport.titre}</h3>
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+              <span>{rapport.dateInfo.replace("T", " ")}</span>
+              {veille && <Badge couleur="#7c3aed">🔎 {veille.nom}</Badge>}
+              {src && <Badge couleur={src.type === "fermee" ? "#dc2626" : "#0284c7"}>{src.type === "fermee" ? "source fermée" : "source ouverte"} : {src.nom}</Badge>}
+            </div>
+          </div>
+          <button onClick={onClose} className="rounded-lg bg-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-300">Fermer</button>
+        </div>
+        <div className="space-y-4 p-4">
+          <div>
+            <h4 className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">Contenu</h4>
+            <p className="text-sm text-slate-700">{rapport.contenu}</p>
+            {rapport.url && (
+              <a href={rapport.url} target="_blank" rel="noreferrer" className="mt-2 inline-block rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-sky-700">
+                📖 Lire l'article original
+              </a>
+            )}
+          </div>
+          <div className="rounded-lg border border-slate-200 p-3">
+            <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">Évaluation de la source</h4>
+            {src ? (
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex-1">
+                  <div className="text-sm font-semibold text-slate-800">{src.nom}</div>
+                  <div className="text-xs text-slate-500">{src.description}</div>
+                  {src.url && <a href={src.url} target="_blank" rel="noreferrer" className="text-xs text-sky-600 underline">{src.url}</a>}
+                </div>
+                <div>
+                  <span className="mb-1 block text-xs font-medium text-slate-600">Fiabilité (A–F)</span>
+                  <select className={inputCls} value={src.fiabilite}
+                    onChange={(e) => majSource(src.id, (s) => { s.fiabilite = e.target.value; })}>
+                    {FIABILITE.map((f) => <option key={f.code} value={f.code}>{f.code} — {f.label}</option>)}
+                  </select>
+                </div>
+                <CotationBadge source={src.fiabilite} info={rapport.cotationInfo} />
+              </div>
+            ) : <p className="text-sm text-slate-500">Aucune source rattachée à ce rapport.</p>}
+          </div>
+          <div className="rounded-lg border border-slate-200 p-3">
+            <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">Cotation globale du rapport</h4>
+            <div className="flex flex-wrap items-center gap-3">
+              <select className={inputCls} style={{ maxWidth: 260 }} value={rapport.cotationInfo}
+                onChange={(e) => majRapport(rapport.id, (r) => { r.cotationInfo = e.target.value; })}>
+                {CREDIBILITE.map((c) => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
+              </select>
+              <CotationBadge source={src ? src.fiabilite : undefined} info={rapport.cotationInfo} />
+            </div>
+          </div>
+          <div className="rounded-lg border border-slate-200 p-3">
+            <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">Informations détaillées et cotation</h4>
+            {infos.length === 0 && <p className="text-sm text-slate-500">Aucune information individuelle. Ajoutez-en en modifiant le rapport (onglet « Saisie d'information »).</p>}
+            <div className="space-y-3">
+              {infos.map((info, i) => (
+                <div key={i} className="rounded-lg bg-slate-50 p-3">
+                  <p className="text-sm text-slate-700">{info.texte}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-medium text-slate-600">Crédibilité :</span>
+                    <select className="rounded-lg border border-slate-300 px-2 py-1 text-sm" value={info.cotation}
+                      onChange={(e) => majInfo(i, "cotation", e.target.value)}>
+                      {CREDIBILITE.map((c) => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
+                    </select>
+                    <CotationBadge source={src ? src.fiabilite : undefined} info={info.cotation} />
+                    <span className="text-xs text-slate-400">{(CREDIBILITE.find((c) => c.code === info.cotation) || {}).label || ""}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function App() {
+  const [db, setDb] = useState(chargerDB());
+  const [onglet, setOnglet] = useState("accueil");
+  const [selectedId, setSelectedId] = useState(null);
+  const [message, setMessage] = useState(null);
+  const [editingEntiteId, setEditingEntiteId] = useState(null);
+  const [editingRapportId, setEditingRapportId] = useState(null);
+  const [recherche, setRecherche] = useState("");
+  const [rapportOuvert, setRapportOuvert] = useState(null);
+
+  useEffect(() => {
+    try { localStorage.setItem(DB_KEY, JSON.stringify(db)); } catch (e) {}
+  }, [db]);
+
+  useEffect(() => {
+    if (!message) return;
+    const t = setTimeout(() => setMessage(null), 3000);
+    return () => clearTimeout(t);
+  }, [message]);
+
+  const emptyEntite = () => ({ id: uid(), type: "personne", nom: "", resume: "", dateHeure: "", lieu: "", prenom: "", biographie: "", latitude: "", longitude: "", description: "", rapportIds: [] });
+  const [formEntite, setFormEntite] = useState(emptyEntite());
+  const [formSource, setFormSource] = useState({ nom: "", type: "ouverte", fiabilite: "B", description: "", veilleId: null, url: "" });
+  const [formRapport, setFormRapport] = useState({ titre: "", contenu: "", dateInfo: "", cotationInfo: "3", sourceId: null, veilleId: null, entitesIds: [], informations: [] });
+  const [formLien, setFormLien] = useState({ fromId: "", toId: "", type: TYPES_LIEN[0], commentaire: "" });
+  const [formVeille, setFormVeille] = useState({ nom: "", thematiques: "" });
+  const [importText, setImportText] = useState("");
+
+  const maj = (fn) => setDb((d) => fn(structuredClone(d)));
+
+  const majRapport = (id, fn) => maj((d) => {
+    const r = d.rapports.find((x) => x.id === id);
+    if (r) fn(r);
+    return d;
+  });
+
+  const majSource = (id, fn) => maj((d) => {
+    const s = d.sources.find((x) => x.id === id);
+    if (s) fn(s);
+    return d;
+  });
+
+  const ajouterVeille = () => {
+    if (!formVeille.nom.trim()) return;
+    maj((d) => { d.veilles.push({ id: uid(), nom: formVeille.nom, thematiques: formVeille.thematiques, creeeLe: new Date().toISOString().slice(0, 10) }); return d; });
+    setFormVeille({ nom: "", thematiques: "" });
+    setMessage("Veille créée.");
+  };
+
+  const ajouterSource = () => {
+    if (!formSource.nom.trim()) return;
+    maj((d) => { d.sources.push({ ...formSource, id: uid() }); return d; });
+    setFormSource({ nom: "", type: "ouverte", fiabilite: "B", description: "", veilleId: null, url: "" });
+    setMessage("Source enregistrée.");
+  };
+
+  const ajouterRapport = () => {
+    if (!formRapport.titre.trim()) return;
+    maj((d) => {
+      const r = { ...formRapport, id: editingRapportId || uid() };
+      if (editingRapportId) {
+        const i = d.rapports.findIndex((x) => x.id === editingRapportId);
+        if (i >= 0) d.rapports[i] = r;
+      } else d.rapports.push(r);
+      r.entitesIds.forEach((eid) => {
+        const e = d.entites.find((x) => x.id === eid);
+        if (e && !e.rapportIds.includes(r.id)) e.rapportIds.push(r.id);
+      });
+      return d;
+    });
+    setFormRapport({ titre: "", contenu: "", dateInfo: "", cotationInfo: "3", sourceId: null, veilleId: null, entitesIds: [], informations: [] });
+    setEditingRapportId(null);
+    setMessage("Rapport enregistré.");
+  };
+
+  const sauverEntite = () => {
+    if (!formEntite.nom.trim()) return;
+    maj((d) => {
+      if (editingEntiteId) {
+        const i = d.entites.findIndex((x) => x.id === editingEntiteId);
+        if (i >= 0) d.entites[i] = formEntite;
+      } else d.entites.push(formEntite);
+      return d;
+    });
+    setFormEntite(emptyEntite());
+    setEditingEntiteId(null);
+    setMessage("Entité enregistrée.");
+  };
+
+  const ajouterLien = () => {
+    if (!formLien.fromId || !formLien.toId || formLien.fromId === formLien.toId) return;
+    maj((d) => { d.liens.push({ ...formLien, id: uid() }); return d; });
+    setFormLien({ fromId: "", toId: "", type: TYPES_LIEN[0], commentaire: "" });
+    setMessage("Lien créé.");
+  };
+
+  const supprimer = (kind, id) => {
+    maj((d) => {
+      if (kind === "entite") {
+        d.entites = d.entites.filter((e) => e.id !== id);
+        d.liens = d.liens.filter((l) => l.fromId !== id && l.toId !== id);
+        d.rapports.forEach((r) => { r.entitesIds = r.entitesIds.filter((x) => x !== id); });
+      }
+      if (kind === "rapport") { d.rapports = d.rapports.filter((r) => r.id !== id); d.entites.forEach((e) => { e.rapportIds = e.rapportIds.filter((x) => x !== id); }); }
+      if (kind === "source") d.sources = d.sources.filter((s) => s.id !== id);
+      if (kind === "lien") d.liens = d.liens.filter((l) => l.id !== id);
+      if (kind === "veille") d.veilles = d.veilles.filter((v) => v.id !== id);
+      return d;
+    });
+    if (selectedId === id) setSelectedId(null);
+    setMessage("Élément supprimé.");
+  };
+
+  const exporterJSON = () => {
+    const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "base-renseignement.json"; a.click();
+    URL.revokeObjectURL(url);
+    setMessage("Export JSON téléchargé.");
+  };
+
+  const exporterCSV = () => {
+    const entete = "type;id;nom;prenom;resume;dateHeure;lieu;latitude;longitude;description";
+    const lignes = db.entites.map((e) => [e.type, e.id, e.nom, e.prenom, e.resume, e.dateHeure, e.lieu, e.latitude, e.longitude, e.description].map((v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`).join(";"));
+    const csv = entete + "\n" + lignes.join("\n");
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "entites.csv"; a.click();
+    URL.revokeObjectURL(url);
+    setMessage("Export CSV téléchargé.");
+  };
+
+  const importer = (texte) => {
+    try {
+      const data = JSON.parse(texte);
+      if (!data.entites || !Array.isArray(data.entites)) throw new Error("format");
+      maj((d) => {
+        const existants = new Set(d.entites.map((e) => e.id));
+        d.entites.push(...data.entites.filter((e) => !existants.has(e.id)));
+        if (Array.isArray(data.liens)) d.liens.push(...data.liens.filter((l) => l.fromId && l.toId));
+        if (Array.isArray(data.rapports)) d.rapports.push(...data.rapports);
+        if (Array.isArray(data.sources)) d.sources.push(...data.sources);
+        return d;
+      });
+      setImportText("");
+      setMessage("Import réussi.");
+    } catch (e) {
+      setMessage("Import impossible : JSON invalide (format d'export attendu).");
+    }
+  };
+
+  const onFichier = (ev) => {
+    const f = ev.target.files ? ev.target.files[0] : null;
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => importer(String(reader.result));
+    reader.readAsText(f);
+    ev.target.value = "";
+  };
+
+  const resultatsRecherche = useMemo(() => {
+    if (!recherche.trim()) return null;
+    const q = recherche.toLowerCase();
+    return db.entites.filter((e) =>
+      [e.nom, e.prenom, e.resume, e.biographie, e.description].join(" ").toLowerCase().includes(q)
+    );
+  }, [recherche, db.entites]);
+
+  const entiteSelectionnee = db.entites.find((e) => e.id === selectedId) || null;
+  const onglets = [
+    { code: "accueil", label: "Accueil · Veille" },
+    { code: "graphe", label: "Schéma relationnel" },
+    { code: "entites", label: "Fiches & entités" },
+    { code: "frise", label: "Frise chronologique" },
+    { code: "carte", label: "Carte" },
+    { code: "veilles", label: "Veilles & sources" },
+    { code: "sources", label: "Sources" },
+    { code: "saisie", label: "Saisie d'information" },
+    { code: "donnees", label: "Données" },
+  ];
+
+  return (
+    <div className="min-h-screen bg-slate-100 text-slate-900">
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3">
+          <h1 className="text-lg font-bold tracking-tight">🛰️ Poste de veille &amp; capitalisation</h1>
+          <input
+            placeholder="Rechercher une entité…"
+            value={recherche}
+            onChange={(e) => setRecherche(e.target.value)}
+            className={`${inputCls} ml-auto max-w-xs`}
+          />
+        </div>
+        <nav className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-4 pb-2">
+          {onglets.map((o) => (
+            <button
+              key={o.code}
+              onClick={() => setOnglet(o.code)}
+              className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium ${onglet === o.code ? "bg-slate-800 text-white" : "text-slate-600 hover:bg-slate-200"}`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </nav>
+      </header>
+
+      {message && (
+        <div className="fixed bottom-4 right-4 z-50 rounded-lg bg-slate-900 px-4 py-2 text-sm text-white shadow-lg">{message}</div>
+      )}
+
+      <main className="mx-auto max-w-7xl space-y-4 px-4 py-6">
+        {onglet === "accueil" && (
+          <PageAccueil db={db} setOnglet={setOnglet} setSelectedId={setSelectedId} setFormVeille={setFormVeille} onOuvrirRapport={setRapportOuvert} />
+        )}
+
+        {rapportOuvert && db.rapports.find((r) => r.id === rapportOuvert) && (
+          <RapportDetail
+            rapport={db.rapports.find((r) => r.id === rapportOuvert)}
+            db={db}
+            onClose={() => setRapportOuvert(null)}
+            majRapport={majRapport}
+            majSource={majSource}
+          />
+        )}
+
+        {resultatsRecherche && (
+          <Card>
+            <h3 className="mb-2 text-sm font-bold uppercase text-slate-500">Résultats ({resultatsRecherche.length})</h3>
+            <div className="flex flex-wrap gap-2">
+              {resultatsRecherche.map((e) => (
+                <button key={e.id} onClick={() => { setSelectedId(e.id); setOnglet("entites"); }}
+                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm hover:bg-slate-50">
+                  {iconeType(e.type)} {e.prenom ? e.prenom + " " : ""}{e.nom}
+                </button>
+              ))}
+              {resultatsRecherche.length === 0 && <p className="text-sm text-slate-500">Aucun résultat.</p>}
+            </div>
+          </Card>
+        )}
+
+        {onglet === "graphe" && (
+          <>
+            <GrapheRelationnel db={db} onSelect={(id) => setSelectedId(id)} selectedId={selectedId} />
+            {entiteSelectionnee && (
+              <FicheEntite entite={entiteSelectionnee} db={db} onClose={() => setSelectedId(null)}
+                onEdit={() => { setFormEntite(structuredClone(entiteSelectionnee)); setEditingEntiteId(entiteSelectionnee.id); setOnglet("entites"); }} />
+            )}
+            <Card>
+              <h3 className="mb-2 font-semibold">Créer un lien</h3>
+              <div className="grid gap-3 md:grid-cols-5">
+                <select className={inputCls} value={formLien.fromId} onChange={(e) => setFormLien({ ...formLien, fromId: e.target.value })}>
+                  <option value="">Entité source…</option>
+                  {db.entites.map((e) => <option key={e.id} value={e.id}>{iconeType(e.type)} {e.prenom ? e.prenom + " " : ""}{e.nom}</option>)}
+                </select>
+                <select className={inputCls} value={formLien.type} onChange={(e) => setFormLien({ ...formLien, type: e.target.value })}>
+                  {TYPES_LIEN.map((t) => <option key={t}>{t}</option>)}
+                </select>
+                <select className={inputCls} value={formLien.toId} onChange={(e) => setFormLien({ ...formLien, toId: e.target.value })}>
+                  <option value="">Entité cible…</option>
+                  {db.entites.map((e) => <option key={e.id} value={e.id}>{iconeType(e.type)} {e.prenom ? e.prenom + " " : ""}{e.nom}</option>)}
+                </select>
+                <input className={inputCls} placeholder="Commentaire" value={formLien.commentaire} onChange={(e) => setFormLien({ ...formLien, commentaire: e.target.value })} />
+                <button onClick={ajouterLien} className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">Ajouter</button>
+              </div>
+              {db.liens.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {db.liens.map((l) => {
+                    const a = db.entites.find((e) => e.id === l.fromId), b = db.entites.find((e) => e.id === l.toId);
+                    if (!a || !b) return null;
+                    return (
+                      <span key={l.id} className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-xs">
+                        {a.nom} → {l.type} → {b.nom}
+                        <button onClick={() => supprimer("lien", l.id)} className="text-slate-400 hover:text-red-600">✕</button>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
+          </>
+        )}
+
+        {onglet === "entites" && (
+          <div className="grid gap-4 lg:grid-cols-3">
+            <div className="space-y-4 lg:col-span-1">
+              <Card>
+                <h3 className="mb-3 font-semibold">{editingEntiteId ? "Modifier l'entité" : "Nouvelle entité"}</h3>
+                <div className="space-y-3">
+                  <Field label="Type">
+                    <select className={inputCls} value={formEntite.type}
+                      onChange={(e) => setFormEntite({ ...formEntite, type: e.target.value })}>
+                      {TYPES_ENTITE.map((t) => <option key={t.code} value={t.code}>{t.label}</option>)}
+                    </select>
+                  </Field>
+                  {formEntite.type === "personne" && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <Field label="Prénom"><input className={inputCls} value={formEntite.prenom} onChange={(e) => setFormEntite({ ...formEntite, prenom: e.target.value })} /></Field>
+                      <Field label="Nom"><input className={inputCls} value={formEntite.nom} onChange={(e) => setFormEntite({ ...formEntite, nom: e.target.value })} /></Field>
+                    </div>
+                  )}
+                  {formEntite.type !== "personne" && (
+                    <Field label={formEntite.type === "evenement" ? "Nom de l'événement" : "Nom"}><input className={inputCls} value={formEntite.nom} onChange={(e) => setFormEntite({ ...formEntite, nom: e.target.value })} /></Field>
+                  )}
+                  <Field label="Résumé"><textarea className={inputCls} rows={2} value={formEntite.resume} onChange={(e) => setFormEntite({ ...formEntite, resume: e.target.value })} /></Field>
+                  {formEntite.type === "evenement" && (
+                    <>
+                      <Field label="Date et heure"><input type="datetime-local" className={inputCls} value={formEntite.dateHeure} onChange={(e) => setFormEntite({ ...formEntite, dateHeure: e.target.value })} /></Field>
+                      <Field label="Lieu (texte)"><input className={inputCls} value={formEntite.lieu} onChange={(e) => setFormEntite({ ...formEntite, lieu: e.target.value })} /></Field>
+                    </>
+                  )}
+                  {formEntite.type === "personne" && (
+                    <Field label="Biographie"><textarea className={inputCls} rows={3} value={formEntite.biographie} onChange={(e) => setFormEntite({ ...formEntite, biographie: e.target.value })} /></Field>
+                  )}
+                  {formEntite.type === "lieu" && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <Field label="Latitude"><input className={inputCls} placeholder="48.85" value={formEntite.latitude} onChange={(e) => setFormEntite({ ...formEntite, latitude: e.target.value })} /></Field>
+                      <Field label="Longitude"><input className={inputCls} placeholder="2.35" value={formEntite.longitude} onChange={(e) => setFormEntite({ ...formEntite, longitude: e.target.value })} /></Field>
+                    </div>
+                  )}
+                  {(formEntite.type === "objet" || formEntite.type === "organisation") && (
+                    <Field label="Description"><textarea className={inputCls} rows={3} value={formEntite.description} onChange={(e) => setFormEntite({ ...formEntite, description: e.target.value })} /></Field>
+                  )}
+                  <div className="flex gap-2">
+                    <button onClick={sauverEntite} className="flex-1 rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">Enregistrer</button>
+                    {editingEntiteId && (
+                      <button onClick={() => { setFormEntite(emptyEntite()); setEditingEntiteId(null); }} className="rounded-lg bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-700">Annuler</button>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            </div>
+            <div className="space-y-3 lg:col-span-2">
+              <div className="flex flex-wrap gap-2">
+                {TYPES_ENTITE.map((t) => (
+                  <Badge key={t.code} couleur={t.couleur}>{t.icone} {db.entites.filter((e) => e.type === t.code).length} {t.label.toLowerCase()}</Badge>
+                ))}
+              </div>
+              {entiteSelectionnee && (
+                <FicheEntite entite={entiteSelectionnee} db={db} onClose={() => setSelectedId(null)}
+                  onEdit={() => { setFormEntite(structuredClone(entiteSelectionnee)); setEditingEntiteId(entiteSelectionnee.id); }} />
+              )}
+              <div className="space-y-2">
+                {db.entites.map((e) => (
+                  <div key={e.id} className={`flex items-center gap-3 rounded-xl border bg-white p-3 shadow-sm ${selectedId === e.id ? "border-slate-800" : "border-slate-200"}`}
+                    style={{ borderLeft: `4px solid ${couleurType(e.type)}` }}>
+                    <button className="flex-1 text-left" onClick={() => setSelectedId(e.id)}>
+                      <div className="font-semibold text-slate-800">{iconeType(e.type)} {e.prenom ? e.prenom + " " : ""}{e.nom}</div>
+                      <div className="text-sm text-slate-500">{e.resume || "—"}</div>
+                    </button>
+                    <button onClick={() => { setFormEntite(structuredClone(e)); setEditingEntiteId(e.id); }} className="rounded-lg bg-slate-100 px-2 py-1 text-xs hover:bg-slate-200">✎</button>
+                    <button onClick={() => supprimer("entite", e.id)} className="rounded-lg bg-slate-100 px-2 py-1 text-xs text-red-600 hover:bg-red-50">✕</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {onglet === "frise" && <FriseChronologique db={db} onSelect={(id) => setSelectedId(id)} />}
+
+        {onglet === "carte" && <VueCarte db={db} onSelect={(id) => setSelectedId(id)} />}
+
+        {onglet === "veilles" && (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="space-y-4">
+              <Card>
+                <h3 className="mb-3 font-semibold">Thématiques de veille</h3>
+                <div className="mb-3 space-y-2">
+                  <Field label="Nom de la veille"><input className={inputCls} value={formVeille.nom} onChange={(e) => setFormVeille({ ...formVeille, nom: e.target.value })} /></Field>
+                  <Field label="Thématiques / mots-clés"><input className={inputCls} placeholder="ex. conflits, diplomatie, énergie" value={formVeille.thematiques} onChange={(e) => setFormVeille({ ...formVeille, thematiques: e.target.value })} /></Field>
+                  <button onClick={ajouterVeille} className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">Lancer la veille</button>
+                </div>
+                <div className="space-y-2">
+                  {db.veilles.map((v) => (
+                    <div key={v.id} className="flex items-start gap-2 rounded-lg bg-slate-50 p-3">
+                      <div className="flex-1">
+                        <div className="font-semibold">🔎 {v.nom}</div>
+                        <div className="text-xs text-slate-500">{v.thematiques} · créée le {v.creeeLe} · {db.rapports.filter((r) => r.veilleId === v.id).length} rapport(s)</div>
+                      </div>
+                      <button onClick={() => supprimer("veille", v.id)} className="text-slate-400 hover:text-red-600">✕</button>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+              <Card>
+                <h3 className="mb-2 font-semibold">Légende de cotation OTAN</h3>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <h4 className="mb-1 text-xs font-bold uppercase text-slate-500">Fiabilité de la source</h4>
+                    <ul className="space-y-1 text-sm">
+                      {FIABILITE.map((f) => <li key={f.code}><span className="font-mono font-bold">{f.code}</span> — {f.label}</li>)}
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="mb-1 text-xs font-bold uppercase text-slate-500">Crédibilité de l'information</h4>
+                    <ul className="space-y-1 text-sm">
+                      {CREDIBILITE.map((c) => <li key={c.code}><span className="font-mono font-bold">{c.code}</span> — {c.label}</li>)}
+                    </ul>
+                  </div>
+                </div>
+              </Card>
+            </div>
+            <div className="space-y-4">
+              <Card>
+                <h3 className="mb-3 font-semibold">Nouvelle source</h3>
+                <div className="space-y-2">
+                  <Field label="Nom de la source"><input className={inputCls} value={formSource.nom} onChange={(e) => setFormSource({ ...formSource, nom: e.target.value })} /></Field>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Field label="Type">
+                      <select className={inputCls} value={formSource.type} onChange={(e) => setFormSource({ ...formSource, type: e.target.value })}>
+                        <option value="ouverte">Source ouverte</option>
+                        <option value="fermee">Source fermée</option>
+                      </select>
+                    </Field>
+                    <Field label="Fiabilité (A–F)">
+                      <select className={inputCls} value={formSource.fiabilite} onChange={(e) => setFormSource({ ...formSource, fiabilite: e.target.value })}>
+                        {FIABILITE.map((f) => <option key={f.code} value={f.code}>{f.code} — {f.label}</option>)}
+                      </select>
+                    </Field>
+                  </div>
+                  <Field label="Rattachée à la veille">
+                    <select className={inputCls} value={formSource.veilleId || ""} onChange={(e) => setFormSource({ ...formSource, veilleId: e.target.value || null })}>
+                      <option value="">— Aucune —</option>
+                      {db.veilles.map((v) => <option key={v.id} value={v.id}>{v.nom}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Description"><input className={inputCls} value={formSource.description} onChange={(e) => setFormSource({ ...formSource, description: e.target.value })} /></Field>
+                  <Field label="URL de la source (optionnel)"><input className={inputCls} placeholder="https://…" value={formSource.url || ""} onChange={(e) => setFormSource({ ...formSource, url: e.target.value })} /></Field>
+                  <button onClick={ajouterSource} className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">Enregistrer la source</button>
+                </div>
+              </Card>
+              <Card>
+                <h3 className="mb-2 font-semibold">Sources enregistrées</h3>
+                <div className="space-y-2">
+                  {db.sources.map((s) => (
+                    <div key={s.id} className="flex items-center gap-2 rounded-lg bg-slate-50 p-3">
+                      <div className="flex-1">
+                        <div className="font-semibold">{s.nom} <Badge couleur={s.type === "fermee" ? "#dc2626" : "#0284c7"}>{s.type === "fermee" ? "fermée" : "ouverte"}</Badge></div>
+                        <div className="text-xs text-slate-500">{s.description}</div>
+                      </div>
+                      <Badge couleur="#334155">Fiabilité {s.fiabilite}</Badge>
+                      <button onClick={() => supprimer("source", s.id)} className="text-slate-400 hover:text-red-600">✕</button>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {onglet === "saisie" && (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card>
+              <h3 className="mb-3 font-semibold">{editingRapportId ? "Modifier le rapport" : "Nouveau rapport d'information"}</h3>
+              <div className="space-y-3">
+                <Field label="Titre"><input className={inputCls} value={formRapport.titre} onChange={(e) => setFormRapport({ ...formRapport, titre: e.target.value })} /></Field>
+                <Field label="Contenu de l'information (coller ici le texte d'une source ouverte/fermée)">
+                  <textarea className={inputCls} rows={5} value={formRapport.contenu} onChange={(e) => setFormRapport({ ...formRapport, contenu: e.target.value })} />
+                </Field>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="Date de l'information"><input type="datetime-local" className={inputCls} value={formRapport.dateInfo} onChange={(e) => setFormRapport({ ...formRapport, dateInfo: e.target.value })} /></Field>
+                  <Field label="Crédibilité (1–6)">
+                    <select className={inputCls} value={formRapport.cotationInfo} onChange={(e) => setFormRapport({ ...formRapport, cotationInfo: e.target.value })}>
+                      {CREDIBILITE.map((c) => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
+                    </select>
+                  </Field>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="Source">
+                    <select className={inputCls} value={formRapport.sourceId || ""} onChange={(e) => setFormRapport({ ...formRapport, sourceId: e.target.value || null })}>
+                      <option value="">— Aucune —</option>
+                      {db.sources.map((s) => <option key={s.id} value={s.id}>{s.nom} ({s.fiabilite})</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Veille">
+                    <select className={inputCls} value={formRapport.veilleId || ""} onChange={(e) => setFormRapport({ ...formRapport, veilleId: e.target.value || null })}>
+                      <option value="">— Aucune —</option>
+                      {db.veilles.map((v) => <option key={v.id} value={v.id}>{v.nom}</option>)}
+                    </select>
+                  </Field>
+                </div>
+                <Field label="Informations à coter individuellement (crédibilité 1–6)">
+                  <div className="space-y-2">
+                    {formRapport.informations.map((info, idx) => (
+                      <div key={idx} className="flex gap-2">
+                        <input className={inputCls} placeholder={`Information n°${idx + 1}`}
+                          value={info.texte}
+                          onChange={(e) => setFormRapport({
+                            ...formRapport,
+                            informations: formRapport.informations.map((x, i) => i === idx ? { ...x, texte: e.target.value } : x),
+                          })} />
+                        <select className="rounded-lg border border-slate-300 px-2 text-sm"
+                          value={info.cotation}
+                          onChange={(e) => setFormRapport({
+                            ...formRapport,
+                            informations: formRapport.informations.map((x, i) => i === idx ? { ...x, cotation: e.target.value } : x),
+                          })}>
+                          {CREDIBILITE.map((c) => <option key={c.code} value={c.code}>{c.code}</option>)}
+                        </select>
+                        <button onClick={() => setFormRapport({ ...formRapport, informations: formRapport.informations.filter((_, i) => i !== idx) })}
+                          className="rounded-lg bg-slate-100 px-2 text-xs text-red-600 hover:bg-red-50">✕</button>
+                      </div>
+                    ))}
+                    <button onClick={() => setFormRapport({ ...formRapport, informations: [...formRapport.informations, { texte: "", cotation: "3" }] })}
+                      className="rounded-lg bg-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-300">+ Ajouter une information</button>
+                  </div>
+                </Field>
+                <Field label="Entités mentionnées">
+                  <div className="max-h-40 space-y-1 overflow-y-auto rounded-lg border border-slate-200 p-2">
+                    {db.entites.map((e) => (
+                      <label key={e.id} className="flex items-center gap-2 text-sm">
+                        <input type="checkbox" checked={formRapport.entitesIds.includes(e.id)}
+                          onChange={(ev) => setFormRapport({
+                            ...formRapport,
+                            entitesIds: ev.target.checked ? [...formRapport.entitesIds, e.id] : formRapport.entitesIds.filter((x) => x !== e.id),
+                          })} />
+                        {iconeType(e.type)} {e.prenom ? e.prenom + " " : ""}{e.nom}
+                      </label>
+                    ))}
+                  </div>
+                </Field>
+                <div className="flex items-center gap-3">
+                  <button onClick={ajouterRapport} className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">Enregistrer</button>
+                  {formRapport.sourceId && <span>Cotation : <CotationBadge source={db.sources.find((s) => s.id === formRapport.sourceId) ? db.sources.find((s) => s.id === formRapport.sourceId).fiabilite : undefined} info={formRapport.cotationInfo} /></span>}
+                  {editingRapportId && <button onClick={() => { setEditingRapportId(null); setFormRapport({ titre: "", contenu: "", dateInfo: "", cotationInfo: "3", sourceId: null, veilleId: null, entitesIds: [], informations: [] }); }} className="text-sm text-slate-500 underline">Annuler la modification</button>}
+                </div>
+              </div>
+            </Card>
+            <Card>
+              <h3 className="mb-2 font-semibold">Rapports enregistrés</h3>
+              <div className="space-y-2">
+                {db.rapports.map((r) => {
+                  const src = db.sources.find((s) => s.id === r.sourceId);
+                  const veilleRapport = db.veilles.find((v) => v.id === r.veilleId);
+                  return (
+                    <div key={r.id} className="rounded-lg bg-slate-50 p-3">
+                      <div className="flex items-center gap-2">
+                        <button className="flex-1 text-left font-semibold hover:underline" onClick={() => setRapportOuvert(r.id)}>{r.titre}</button>
+                        <CotationBadge source={src ? src.fiabilite : undefined} info={r.cotationInfo} />
+                        <button onClick={() => supprimer("rapport", r.id)} className="text-slate-400 hover:text-red-600">✕</button>
+                        <button onClick={() => {
+                          setFormRapport({ titre: r.titre, contenu: r.contenu, dateInfo: r.dateInfo, cotationInfo: r.cotationInfo, sourceId: r.sourceId, veilleId: r.veilleId, entitesIds: [...r.entitesIds], informations: (r.informations || []).map((x) => ({ ...x })) });
+                          setEditingRapportId(r.id);
+                        }} className="text-slate-400 hover:text-slate-800">✎</button>
+                      </div>
+                      <div className="mt-1 text-sm text-slate-600">{r.contenu}</div>
+                      {(r.informations || []).length > 0 && (
+                        <ul className="mt-2 space-y-1">
+                          {(r.informations || []).map((info, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
+                              <CotationBadge source={src ? src.fiabilite : undefined} info={info.cotation} />
+                              <span>{info.texte}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      <div className="mt-1 text-xs text-slate-400">
+                        {r.dateInfo.replace("T", " ")} · {src ? src.nom : "source non précisée"} · Veille : {veilleRapport ? veilleRapport.nom : "non rattachée"} · {r.entitesIds.length} entité(s)
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {onglet === "sources" && (
+          <Card>
+            <h3 className="mb-1 font-semibold">📚 Sources — évaluation et suivi</h3>
+            <p className="mb-3 text-sm text-slate-500">Ajustez la fiabilité OTAN (A–F) de chaque source ; la modification s'applique instantanément à tous les rapports associés.</p>
+            <div className="space-y-2">
+              {db.sources.map((s) => {
+                const veille = db.veilles.find((v) => v.id === s.veilleId);
+                const nbRapports = db.rapports.filter((r) => r.sourceId === s.id).length;
+                return (
+                  <div key={s.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white p-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-semibold text-slate-800">{s.nom}</span>
+                        <Badge couleur={s.type === "fermee" ? "#dc2626" : "#0284c7"}>{s.type === "fermee" ? "fermée" : "ouverte"}</Badge>
+                        {veille && <Badge couleur="#7c3aed">🔎 {veille.nom}</Badge>}
+                        <Badge couleur="#334155">{nbRapports} rapport(s)</Badge>
+                      </div>
+                      <div className="text-xs text-slate-500">{s.description}</div>
+                      {s.url && <a href={s.url} target="_blank" rel="noreferrer" className="text-xs text-sky-600 underline">Accéder à la source</a>}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-slate-600">Fiabilité :</span>
+                      <select className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm" value={s.fiabilite}
+                        onChange={(e) => majSource(s.id, (x) => { x.fiabilite = e.target.value; })}>
+                        {FIABILITE.map((f) => <option key={f.code} value={f.code}>{f.code} — {f.label}</option>)}
+                      </select>
+                      <Badge couleur="#334155">{s.fiabilite}</Badge>
+                    </div>
+                    <button onClick={() => supprimer("source", s.id)} className="rounded-lg bg-slate-100 px-2 py-1 text-xs text-red-600 hover:bg-red-50">✕</button>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-4 flex items-center gap-3 rounded-lg bg-slate-50 p-3 text-sm">
+              <span className="font-medium text-slate-600">Répartition des fiabilités :</span>
+              {FIABILITE.map((f) => (
+                <Badge key={f.code} couleur="#334155">{f.code} : {db.sources.filter((s) => s.fiabilite === f.code).length}</Badge>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {onglet === "donnees" && (
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <h3 className="mb-3 font-semibold">Statistiques</h3>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="rounded-lg bg-slate-50 p-3"><div className="text-2xl font-bold">{db.veilles.length}</div>Veilles</div>
+                <div className="rounded-lg bg-slate-50 p-3"><div className="text-2xl font-bold">{db.sources.length}</div>Sources</div>
+                <div className="rounded-lg bg-slate-50 p-3"><div className="text-2xl font-bold">{db.rapports.length}</div>Rapports</div>
+                <div className="rounded-lg bg-slate-50 p-3"><div className="text-2xl font-bold">{db.entites.length}</div>Entités</div>
+                <div className="rounded-lg bg-slate-50 p-3"><div className="text-2xl font-bold">{db.liens.length}</div>Liens</div>
+                <div className="rounded-lg bg-slate-50 p-3"><div className="text-2xl font-bold">{db.entites.filter((e) => e.type === "evenement").length}</div>Événements</div>
+              </div>
+              <p className="mt-3 text-xs text-slate-500">Les données sont sauvegardées automatiquement dans le navigateur (stockage local).</p>
+            </Card>
+            <Card>
+              <h3 className="mb-3 font-semibold">Import / Export</h3>
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <button onClick={exporterJSON} className="flex-1 rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">⬇ Export JSON (base complète)</button>
+                  <button onClick={exporterCSV} className="flex-1 rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">⬇ Export CSV (entités)</button>
+                </div>
+                <Field label="Importer un fichier (JSON issu d'un export)">
+                  <input type="file" accept=".json,application/json" onChange={onFichier} className={inputCls} />
+                </Field>
+                <Field label="… ou coller du JSON">
+                  <textarea className={inputCls} rows={4} value={importText} onChange={(e) => setImportText(e.target.value)} />
+                </Field>
+                <button onClick={() => importer(importText)} className="rounded-lg bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-300">Importer</button>
+              </div>
+            </Card>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
