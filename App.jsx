@@ -389,10 +389,14 @@ function GrapheRelationnel({ db, onSelect, selectedId }) {
 }
 
 function FriseChronologique({ db, onSelect }) {
-  const evenements = db.entites
-    .filter((e) => e.type === "evenement" && e.dateHeure)
-    .sort((a, b) => a.dateHeure.localeCompare(b.dateHeure));
-  const rapports = db.rapports.filter((r) => r.dateInfo).sort((a, b) => a.dateInfo.localeCompare(b.dateInfo));
+  const evenements = useMemo(
+    () => db.entites.filter((e) => e.type === "evenement" && e.dateHeure).sort((a, b) => a.dateHeure.localeCompare(b.dateHeure)),
+    [db.entites]
+  );
+  const rapports = useMemo(
+    () => db.rapports.filter((r) => r.dateInfo).sort((a, b) => a.dateInfo.localeCompare(b.dateInfo)),
+    [db.rapports]
+  );
 
   const PointFrise = ({ date, titre, couleur, icone, onClick, badge }) => (
     <button onClick={onClick} className="group flex w-full gap-3 text-left">
@@ -576,7 +580,10 @@ function FicheEntite({ entite, db, onClose, onEdit }) {
 }
 
 function PageAccueil({ db, setOnglet, setSelectedId, setFormVeille, onOuvrirRapport }) {
-  const rapportsTries = [...db.rapports].sort((a, b) => (b.dateInfo || "").localeCompare(a.dateInfo || ""));
+  const rapportsTries = useMemo(
+    () => [...db.rapports].sort((a, b) => (b.dateInfo || "").localeCompare(a.dateInfo || "")),
+    [db.rapports]
+  );
   const recents = rapportsTries.slice(0, 5);
   const veilleAvecId = (r) => db.veilles.find((v) => v.id === r.veilleId);
 
@@ -752,8 +759,15 @@ export default function App() {
   const [recherche, setRecherche] = useState("");
   const [rapportOuvert, setRapportOuvert] = useState(null);
 
+  // Sauvegarde différée (300 ms) : évite une écriture localStorage à chaque frappe,
+  // avec écriture immédiate à la fermeture de l'onglet pour ne rien perdre.
   useEffect(() => {
-    try { localStorage.setItem(DB_KEY, JSON.stringify(db)); } catch (e) {}
+    const t = setTimeout(() => {
+      try { localStorage.setItem(DB_KEY, JSON.stringify(db)); } catch (e) {}
+    }, 300);
+    const sauver = () => { try { localStorage.setItem(DB_KEY, JSON.stringify(db)); } catch (e) {} };
+    window.addEventListener("beforeunload", sauver);
+    return () => { clearTimeout(t); window.removeEventListener("beforeunload", sauver); sauver(); };
   }, [db]);
 
   useEffect(() => {
@@ -912,8 +926,8 @@ export default function App() {
     );
   }, [recherche, db.entites]);
 
-  const entiteSelectionnee = db.entites.find((e) => e.id === selectedId) || null;
-  const onglets = [
+  const entiteSelectionnee = useMemo(() => db.entites.find((e) => e.id === selectedId) || null, [db.entites, selectedId]);
+  const onglets = useMemo(() => [
     { code: "accueil", label: "Accueil · Veille" },
     { code: "graphe", label: "Schéma relationnel" },
     { code: "entites", label: "Fiches & entités" },
@@ -923,7 +937,7 @@ export default function App() {
     { code: "sources", label: "Sources" },
     { code: "saisie", label: "Saisie d'information" },
     { code: "donnees", label: "Données" },
-  ];
+  ], [db.entites]);
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
