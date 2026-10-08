@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="fr">
 <head>
@@ -5,10 +6,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <title>Poste de veille</title>
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  // Diagnostic visible : affiche l'état de chargement et les erreurs au lieu d'une page blanche
+  window.addEventListener("error", function (ev) {
+    var d = document.getElementById("diag");
+    if (d) d.innerHTML = "<b>Erreur au démarrage :</b><br>" + (ev.message || "inconnue");
+  });
+  function marquer(id, ok, libelle) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = (ok ? "✅" : "❌") + " " + libelle;
+  }
+</script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"
+  onerror="marquer('c1', false, 'React non chargé (CDN unpkg bloqué)')"
+  onload="marquer('c1', true, 'React chargé')"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
+  onerror="marquer('c2', false, 'React-DOM non chargé (CDN unpkg bloqué)')"
+  onload="marquer('c2', true, 'React-DOM chargé')"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"
+  onerror="marquer('c3', false, 'Babel non chargé (CDN unpkg bloqué)')"
+  onload="marquer('c3', true, 'Babel chargé')"></script>
+<script src="https://cdn.tailwindcss.com"
+  onerror="marquer('c4', false, 'Styles non chargés (cdn.tailwindcss.com bloqué)')"
+  onload="marquer('c4', true, 'Styles chargés')"></script>
 <style>
   html { -webkit-text-size-adjust: 100%; }
   body { margin: 0; }
@@ -16,6 +36,15 @@
 </head>
 <body>
 <div id="root"></div>
+<div id="diag" style="font: 14px/1.6 system-ui, sans-serif; color: #334155; padding: 16px; max-width: 640px; margin: 0 auto;">
+  <b>Chargement de l'application…</b>
+  <p id="c1" style="color:#64748b">⏳ React…</p>
+  <p id="c2" style="color:#64748b">⏳ React-DOM…</p>
+  <p id="c3" style="color:#64748b">⏳ Babel…</p>
+  <p id="c4" style="color:#64748b">⏳ Styles…</p>
+  <p style="color:#94a3b8;font-size:12px">Si un ❌ apparaît : le réseau bloque un composant externe (CDN).
+  Si tout reste ⏳ : pas d'accès internet. Cette zone disparaît au lancement de l'application.</p>
+</div>
 <script type="text/babel" data-presets="react">
 const { useEffect, useMemo, useRef, useState } = React;
 
@@ -1424,6 +1453,8 @@ function App() {
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+var diag = document.getElementById("diag");
+if (diag) diag.remove();
 </script>
 </body>
 </html>
