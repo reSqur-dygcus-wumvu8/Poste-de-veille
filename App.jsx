@@ -1343,6 +1343,11 @@ function PageAccueil({ db, setOnglet, setSelectedId, setFormVeille, onOuvrirRapp
             </button>
             <button onClick={() => setOnglet("veilles")} className="rounded-lg bg-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-300">Gérer les veilles</button>
           </div>
+          <div className="flex items-center gap-2 mt-2">
+            <button className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700">📋 Mettre en sélection</button>
+            <button className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">💾 Capitaliser</button>
+            <button className="rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-700">⚡ Exploiter</button>
+          </div>
           <div className="mt-3 space-y-2">
             {db.veilles.map((v) => {
               const tous = db.rapports.filter((r) => r.veilleId === v.id);
