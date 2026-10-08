@@ -1,0 +1,451 @@
+{
+  "veilles": [
+    {
+      "id": "v1",
+      "nom": "Géopolitique Europe de l'Est",
+      "thematiques": "conflits, diplomatie, énergie",
+      "creeeLe": "2026-09-28"
+    },
+    {
+      "id": "v2",
+      "nom": "Cybersécurité critique",
+      "thematiques": "infrastructures, attaques, régulation",
+      "creeeLe": "2026-10-01"
+    },
+    {
+      "id": "v3",
+      "nom": "Actualité africaine",
+      "thematiques": "politique, économie, société — presse panafricaine et internationale",
+      "creeeLe": "2026-10-03"
+    }
+  ],
+  "sources": [
+    {
+      "id": "s1",
+      "nom": "Agence de presse internationale",
+      "type": "ouverte",
+      "fiabilite": "B",
+      "description": "Dépêches vérifiées, citations croisées",
+      "veilleId": "v1"
+    },
+    {
+      "id": "s2",
+      "nom": "Rapport interne confidentiel",
+      "type": "fermee",
+      "fiabilite": "C",
+      "description": "Document classifié fourni par un contact",
+      "veilleId": "v1"
+    },
+    {
+      "id": "s3",
+      "nom": "Blog spécialisé sécurité",
+      "type": "ouverte",
+      "fiabilite": "D",
+      "description": "Analyses pointues mais partisanes",
+      "veilleId": "v2"
+    },
+    {
+      "id": "s10",
+      "nom": "RFI Afrique",
+      "type": "ouverte",
+      "fiabilite": "B",
+      "description": "Rédaction dédiée au continent : Maghreb, Sahel, Afrique centrale et de l'Ouest",
+      "veilleId": "v3",
+      "url": "https://www.rfi.fr/fr/afrique/"
+    },
+    {
+      "id": "s11",
+      "nom": "Africanews",
+      "type": "ouverte",
+      "fiabilite": "C",
+      "description": "Chaîne panafricaine d'information en continu",
+      "veilleId": "v3",
+      "url": "https://fr.africanews.com/"
+    },
+    {
+      "id": "s12",
+      "nom": "BBC News Africa",
+      "type": "ouverte",
+      "fiabilite": "B",
+      "description": "Section Afrique de la BBC, correspondants sur le continent",
+      "veilleId": "v3",
+      "url": "https://www.bbc.com/news/world/africa"
+    },
+    {
+      "id": "s13",
+      "nom": "Jeune Afrique",
+      "type": "ouverte",
+      "fiabilite": "C",
+      "description": "Hebdomadaire panafricain, sources confirmées en local",
+      "veilleId": "v3",
+      "url": "https://www.jeuneafrique.com/"
+    },
+    {
+      "id": "s14",
+      "nom": "allAfrica.com",
+      "type": "ouverte",
+      "fiabilite": "C",
+      "description": "Agrégateur : plus de 600 dépêches quotidiennes de 90 organisations de presse africaines",
+      "veilleId": "v3",
+      "url": "https://allafrica.com/"
+    },
+    {
+      "id": "s15",
+      "nom": "La Presse (Québec) — Afrique",
+      "type": "ouverte",
+      "fiabilite": "B",
+      "description": "Section Afrique du quotidien québécois, dépêches d'agences",
+      "veilleId": "v3",
+      "url": "https://www.lapresse.ca/international/afrique/"
+    }
+  ],
+  "rapports": [
+    {
+      "id": "r1",
+      "titre": "Sommet régional sur la sécurité énergétique",
+      "contenu": "Un sommet réunit plusieurs dirigeants et organisations à Varsovie pour discuter de la sécurisation des infrastructures énergétiques.",
+      "dateInfo": "2026-09-30T09:00",
+      "cotationInfo": "2",
+      "sourceId": "s1",
+      "veilleId": "v1",
+      "entitesIds": [
+        "e1",
+        "e2",
+        "e3",
+        "e4"
+      ],
+      "informations": [
+        {
+          "texte": "Le sommet s'ouvre le 30 septembre à 9h à Varsovie.",
+          "cotation": "2"
+        },
+        {
+          "texte": "Une coopération renforcée sur les infrastructures énergétiques serait annoncée.",
+          "cotation": "3"
+        }
+      ]
+    },
+    {
+      "id": "r2",
+      "titre": "Cyberattaque contre un opérateur électrique",
+      "contenu": "Un groupe clandestin a ciblé un opérateur électrique européen via une faille d'un équipement industriel.",
+      "dateInfo": "2026-10-02T03:30",
+      "cotationInfo": "3",
+      "sourceId": "s2",
+      "veilleId": "v2",
+      "entitesIds": [
+        "e5",
+        "e6",
+        "e7"
+      ],
+      "informations": [
+        {
+          "texte": "L'attaque a eu lieu dans la nuit du 1er au 2 octobre.",
+          "cotation": "2"
+        },
+        {
+          "texte": "Le groupe « Tempête » serait à l'origine de l'intrusion.",
+          "cotation": "4"
+        }
+      ]
+    },
+    {
+      "id": "r10",
+      "titre": "Afrique du Sud : double fusillade au Cap et à Johannesburg, 27 morts",
+      "contenu": "Huit hommes armés ont tué 17 personnes dans un bar de l'ouest de Johannesburg, puis dix autres ont été tuées dans un établissement nocturne du Cap, dans la nuit du 26 au 27 septembre. La police a lancé des chasses à l'homme avec des unités spéciales. Recoupé : RFI, France 24, franceinfo, TF1.",
+      "dateInfo": "2026-09-27T10:00",
+      "cotationInfo": "1",
+      "sourceId": "s12",
+      "veilleId": "v3",
+      "entitesIds": [],
+      "url": "https://www.bbc.com/news/world/africa",
+      "informations": [
+        {
+          "texte": "27 morts au total : 17 à Johannesburg (bar, West Rand) et 10 au Cap (township).",
+          "cotation": "1"
+        },
+        {
+          "texte": "La violence armée et les rivalités entre gangs demeurent un fléau national en Afrique du Sud.",
+          "cotation": "1"
+        }
+      ]
+    },
+    {
+      "id": "r11",
+      "titre": "RDC : crash d'un avion à Kenge, 17 morts dont deux hauts responsables de la justice militaire",
+      "contenu": "Un avion de la compagnie TRACEP Congo Aviation s'est écrasé le 25 septembre à Kenge (Kwango). Bilan définitif : 17 morts, dont les lieutenants-généraux Joseph Mutombo Katalayi Tiende (Haute Cour militaire) et Lucien-René Likulia Bakumi (auditeur général des FARDC). Plusieurs enquêtes ouvertes. Recoupé : TV5MONDE, Atlasinfo, Cedar News.",
+      "dateInfo": "2026-09-26T10:00",
+      "cotationInfo": "1",
+      "sourceId": "s13",
+      "veilleId": "v3",
+      "entitesIds": [],
+      "url": "https://www.jeuneafrique.com/",
+      "informations": [
+        {
+          "texte": "17 personnes ont péri dans le crash du 25 septembre à Kenge.",
+          "cotation": "1"
+        },
+        {
+          "texte": "L'auditeur général des forces armées figurait parmi les victimes.",
+          "cotation": "1"
+        }
+      ]
+    },
+    {
+      "id": "r12",
+      "titre": "Dakar : les Jeux olympiques de la jeunesse du 31 octobre au 13 novembre",
+      "contenu": "Les JOJ d'été se tiennent à Dakar, Diamniadio et Saly du 31 octobre au 13 novembre 2026 : première compétition olympique organisée sur le continent africain. Recoupé : site officiel du CIO (Dakar 2026), Wikipedia.",
+      "dateInfo": "2026-09-29T09:00",
+      "cotationInfo": "1",
+      "sourceId": "s13",
+      "veilleId": "v3",
+      "entitesIds": [],
+      "url": "https://www.jeuneafrique.com/",
+      "informations": [
+        {
+          "texte": "Les JOJ se tiennent à Dakar du 31 octobre au 13 novembre 2026.",
+          "cotation": "1"
+        },
+        {
+          "texte": "Il s'agit de la première compétition olympique organisée en Afrique.",
+          "cotation": "1"
+        }
+      ]
+    },
+    {
+      "id": "r13",
+      "titre": "Kenya : Dangote lance une mégaraffinerie de 16 milliards de dollars à Lamu",
+      "contenu": "Aliko Dangote (homme le plus riche d'Afrique) et le président William Ruto ont posé la première pierre d'une raffinerie de 16 milliards de dollars à Lamu, le 30 septembre, en présence des dirigeants éthiopien et ougandais. Capacité prévue : 700 000 barils/jour. Recoupé : BBC News Afrique, New African, Connaissance des Énergies.",
+      "dateInfo": "2026-09-30T20:00",
+      "cotationInfo": "1",
+      "sourceId": "s11",
+      "veilleId": "v3",
+      "entitesIds": [],
+      "url": "https://fr.africanews.com/",
+      "informations": [
+        {
+          "texte": "Raffinerie de 16 milliards de dollars à Lamu, sur la côte nord du Kenya, lancée le 30 septembre.",
+          "cotation": "1"
+        },
+        {
+          "texte": "Appel de Dangote à une prise en main économique du continent d'ici 2030.",
+          "cotation": "2"
+        }
+      ]
+    },
+    {
+      "id": "r14",
+      "titre": "RDC : l'épidémie d'Ebola dépasse 3 000 morts",
+      "contenu": "L'épidémie d'Ebola en RDC, la plus meurtrière jamais enregistrée dans le pays, a dépassé 3 000 morts selon l'Institut national de santé publique congolais ; 60 zones de santé touchées dans six provinces, essais cliniques de vaccins attendus dès octobre ou novembre. Recoupé : La Presse/AFP, La Libre, TVA/TF1.",
+      "dateInfo": "2026-09-24T18:00",
+      "cotationInfo": "1",
+      "sourceId": "s15",
+      "veilleId": "v3",
+      "entitesIds": [],
+      "url": "https://www.lapresse.ca/international/afrique/",
+      "informations": [
+        {
+          "texte": "Plus de 3 000 morts dus à Ebola en RDC (chiffres officiels de l'INSP).",
+          "cotation": "1"
+        },
+        {
+          "texte": "Il s'agit de l'épidémie la plus meurtrière jamais enregistrée dans le pays.",
+          "cotation": "2"
+        }
+      ]
+    },
+    {
+      "id": "r15",
+      "titre": "Éthiopie : reprise des combats dans le Tigré depuis le 23 septembre",
+      "contenu": "Depuis le 23 septembre, les combats ont repris dans le nord de l'Éthiopie entre le gouvernement fédéral et les autorités du Tigré (TPLF) ; le TPLF s'est emparé des trois aéroports du Tigré, des combats ont été signalés en Amhara et Afar. L'Éthiopie et l'Érythrée ont rompu leurs relations diplomatiques. Recoupé : AFP, Africanews, Boursorama/AFP.",
+      "dateInfo": "2026-10-02T08:00",
+      "cotationInfo": "2",
+      "sourceId": "s11",
+      "veilleId": "v3",
+      "entitesIds": [],
+      "url": "https://fr.africanews.com/",
+      "informations": [
+        {
+          "texte": "Les combats ont repris le 23 septembre dans le nord de l'Éthiopie (Tigré).",
+          "cotation": "1"
+        },
+        {
+          "texte": "Rupture des relations diplomatiques entre l'Éthiopie et l'Érythrée, craintes d'escalade régionale.",
+          "cotation": "2"
+        },
+        {
+          "texte": "Des dizaines de milliers de déplacés dans l'Afar selon des sources non vérifiées indépendamment.",
+          "cotation": "4"
+        }
+      ]
+    }
+  ],
+  "entites": [
+    {
+      "id": "e1",
+      "type": "evenement",
+      "nom": "Sommet de Varsovie",
+      "resume": "Sommet régional sur la sécurité énergétique",
+      "dateHeure": "2026-09-30T09:00",
+      "lieu": "Varsovie",
+      "prenom": "",
+      "biographie": "",
+      "latitude": "",
+      "longitude": "",
+      "description": "",
+      "rapportIds": [
+        "r1"
+      ]
+    },
+    {
+      "id": "e2",
+      "type": "personne",
+      "nom": "Nowak",
+      "resume": "Négociatrice en chef",
+      "dateHeure": "",
+      "lieu": "",
+      "prenom": "Anna",
+      "biographie": "Diplomate chevronnée, spécialiste des questions énergétiques.",
+      "latitude": "",
+      "longitude": "",
+      "description": "",
+      "rapportIds": [
+        "r1"
+      ]
+    },
+    {
+      "id": "e3",
+      "type": "lieu",
+      "nom": "Varsovie",
+      "resume": "Capitale, hôte du sommet",
+      "dateHeure": "",
+      "lieu": "",
+      "prenom": "",
+      "biographie": "",
+      "latitude": "52.23",
+      "longitude": "21.01",
+      "description": "",
+      "rapportIds": [
+        "r1"
+      ]
+    },
+    {
+      "id": "e4",
+      "type": "organisation",
+      "nom": "Conseil énergétique régional",
+      "resume": "Organisation intergouvernementale",
+      "dateHeure": "",
+      "lieu": "",
+      "prenom": "",
+      "biographie": "",
+      "latitude": "",
+      "longitude": "",
+      "description": "Coordonne les politiques énergétiques.",
+      "rapportIds": [
+        "r1"
+      ]
+    },
+    {
+      "id": "e5",
+      "type": "organisation",
+      "nom": "Groupe clandestin « Tempête »",
+      "resume": "Groupe cybercriminel suspecté",
+      "dateHeure": "",
+      "lieu": "",
+      "prenom": "",
+      "biographie": "",
+      "latitude": "",
+      "longitude": "",
+      "description": "Connu pour des attaques contre des infrastructures.",
+      "rapportIds": [
+        "r2"
+      ]
+    },
+    {
+      "id": "e6",
+      "type": "lieu",
+      "nom": "Poste de transformation Est",
+      "resume": "Site ciblé par la cyberattaque",
+      "dateHeure": "",
+      "lieu": "",
+      "prenom": "",
+      "biographie": "",
+      "latitude": "50.85",
+      "longitude": "4.35",
+      "description": "",
+      "rapportIds": [
+        "r2"
+      ]
+    },
+    {
+      "id": "e7",
+      "type": "objet",
+      "nom": "Routeur industriel SCC-200",
+      "resume": "Équipement vulnérable exploité",
+      "dateHeure": "",
+      "lieu": "",
+      "prenom": "",
+      "biographie": "",
+      "latitude": "",
+      "longitude": "",
+      "description": "Matériel SCADA comportant la faille exploitée.",
+      "rapportIds": [
+        "r2"
+      ]
+    }
+  ],
+  "liens": [
+    {
+      "id": "l1",
+      "fromId": "e2",
+      "toId": "e4",
+      "type": "membre de",
+      "commentaire": "Représente son pays au conseil"
+    },
+    {
+      "id": "l2",
+      "fromId": "e2",
+      "toId": "e1",
+      "type": "participe à",
+      "commentaire": ""
+    },
+    {
+      "id": "l3",
+      "fromId": "e1",
+      "toId": "e3",
+      "type": "localisé à",
+      "commentaire": ""
+    },
+    {
+      "id": "l4",
+      "fromId": "e4",
+      "toId": "e1",
+      "type": "impliqué dans",
+      "commentaire": ""
+    },
+    {
+      "id": "l5",
+      "fromId": "e5",
+      "toId": "e6",
+      "type": "cible de",
+      "commentaire": "Attaque du 02/10/2026"
+    },
+    {
+      "id": "l6",
+      "fromId": "e7",
+      "toId": "e6",
+      "type": "localisé à",
+      "commentaire": ""
+    },
+    {
+      "id": "l7",
+      "fromId": "e5",
+      "toId": "e7",
+      "type": "possède",
+      "commentaire": "Utilisé comme vecteur d'intrusion"
+    }
+  ],
+  "rejets": [],
+  "migre": true,
+  "majLe": "2026-10-08T13:53:14.796Z"
+}

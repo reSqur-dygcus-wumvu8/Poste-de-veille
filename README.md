@@ -4,29 +4,30 @@ Application React de veille informationnelle (fiche de renseignement, cotation O
 
 ## Fichiers
 
-- **App.jsx** — code source React de l'application (version optimisée : sauvegarde différée, tris mémoïsés).
-- **index.html** — version autonome : un seul fichier à ouvrir dans un navigateur (React chargé via CDN, connexion internet requise au lancement). Fonctionne sur Mac, iPhone et iPad.
+- **App.jsx** — code source React de l'application.
+- **index.html** — version autonome à ouvrir dans un navigateur (React via CDN, internet requis au lancement).
+- **base.json** — base de données de référence : chargée automatiquement par l'application au démarrage si elle est plus récente que la base locale.
+
+## Fonctionnalités
+
+- Veilles, sources, rapports, entités, liens, cotation OTAN (fiabilité A-F, crédibilité 1-6).
+- **Carte multi-modes** : tuiles OpenStreetMap (Plan) et imagerie Esri (Satellite), projection Mercator, glisser au doigt/souris, zoom molette et pincement à deux doigts.
+- **Mise à jour des veilles** : bouton « 🔄 Actualiser » par veille — interroge les flux RSS/Atom des sources (via relais CORS) et crée des rapports provisoires à valider dans l'onglet « Saisie d'information » (Valider / Rejeter).
+- **Base de référence GitHub** : au démarrage, l'application charge `base.json` depuis ce dépôt s'il est plus récent que la base locale (comparaison des horodatages `majLe`). Bouton « ☁︎ Charger la base distante » pour un chargement forcé (onglet « Données »).
+
+## Cycle de vie des données
+
+1. Les saisies sont enregistrées dans le stockage local du navigateur (par appareil).
+2. Pour publier une base mise à jour : onglet « Données » → Export JSON → remplacer `base.json` du dépôt (ou demander à l'agent de le pousser).
+3. Tous les appareils récupèrent automatiquement la base de référence au prochain lancement.
 
 ## Utilisation
 
-### Version autonome (recommandée pour iPhone/iPad)
-1. Télécharger `index.html` (bouton « Download » / « Raw » sur GitHub).
-2. Sur Mac : double-clic → Safari. Sur iPhone/iPad : ouvrir via l'app Documents de Readdle (exécute le JavaScript), ou via GitHub Pages si activé.
-3. Les données sont enregistrées automatiquement dans le stockage local du navigateur (par appareil).
+### GitHub Pages (recommandée iPhone/iPad)
+https://resqur-dygcus-wumvu8.github.io/Poste-de-veille/ — puis Partager → « Sur l'écran d'accueil ».
 
-### Version React (développement)
-`App.jsx` est un composant React autonome : importer dans un projet React et rendre le composant par défaut.
-
-## Optimisations (cette version)
-
-- Sauvegarde localStorage différée de 300 ms avec écriture immédiate à la fermeture de l'onglet : moins d'écritures disque, aucune perte de données.
-- Tris et listes mémoïsés (frise chronologique, accueil, barre d'onglets) : moins de recalculs à chaque rendu.
-
-## Données
-
-- Onglet « Données » : export JSON (base complète) et import JSON.
-- Les données sont stockées dans le navigateur (localStorage), par appareil et par navigateur : pas de synchronisation automatique entre iPhone/iPad/Mac.
-- Pour transférer la base entre appareils : Export JSON, puis Import sur l'autre appareil.
+### Fichier local
+Télécharger `index.html` et l'ouvrir dans Safari (Mac) ou l'app Documents (iPhone/iPad).
 
 ## Cotation OTAN
 
